@@ -1,0 +1,115 @@
+#ifndef KKBOX_CONFIG_H
+#define KKBOX_CONFIG_H
+
+#include <Arduino.h>
+
+#define FW_NAME    "KKBOX"
+#define FW_VERSION "1.0.0"
+
+/* ---------- RS232 (硬體 UART) ----------
+ * 依據 docs/KKBOX接腳定義: RS232-RX = GPIO17 = PD0/RXD
+ *                          RS232-TX = GPIO18 = PD1/TXD
+ * 因此直接使用 Arduino 硬體 Serial (D0 / D1)。
+ */
+#define SERIAL_BAUD 57600
+
+/* ---------- 板載 LED1 ----------
+ * 原理圖 LED1 = ATmega168 PB6 (GPIO6)。
+ * 注意: PB6 在標準 Arduino 板為 XTAL1; 本板依 docs 使用內建 8MHz RC
+ *       振盪器, 故 PB6/PB7 可當一般 GPIO。
+ * 若你的板子外接石英晶體, 請把 LED1_DIRECT 設 0 並改用 LED1_PIN。
+ */
+#define LED1_DIRECT 1
+#if LED1_DIRECT
+  #define LED1_PORT PORTB
+  #define LED1_DDR  DDRB
+  #define LED1_BITN PB6
+#else
+  #define LED1_PIN  13
+#endif
+
+static inline void ledInit() {
+#if LED1_DIRECT
+  LED1_DDR |= _BV(LED1_BITN);
+#else
+  pinMode(LED1_PIN, OUTPUT);
+#endif
+}
+
+static inline void ledWrite(uint8_t on) {
+#if LED1_DIRECT
+  if (on) LED1_PORT |= _BV(LED1_BITN);
+  else    LED1_PORT &= ~_BV(LED1_BITN);
+#else
+  digitalWrite(LED1_PIN, on ? HIGH : LOW);
+#endif
+}
+
+/* ---------- 陀螺儀 (壓電式, 接 ADC) ----------
+ * GPIO8 / GPIO9 / GPIO10 = PC0 / PC1 / PC2 = A0 / A1 / A2
+ */
+#define GYRO_ROLL_PIN   A0
+#define GYRO_PITCH_PIN  A1
+#define GYRO_YAW_PIN    A2
+
+#define GYRO_REVERSE_ROLL  0
+#define GYRO_REVERSE_PITCH 0
+#define GYRO_REVERSE_YAW   0
+
+/* ---------- 增益可變電阻 GPIO11/12/13 = PC3/PC4/PC5 = A3/A4/A5 ----------
+ * 預設關閉; 若板上確實有可變電阻再接, 否則浮空讀值會造成增益亂跳。
+ */
+#define USE_GAIN_POTS  0
+#define GAIN_ROLL_PIN  A3
+#define GAIN_PITCH_PIN A4
+#define GAIN_YAW_PIN   A5
+
+/* ---------- 馬達 / ESC 輸出 ----------
+ * GPIO 對照: M1=GPIO2  M2=GPIO1  M3=GPIO0  M4=GPIO23
+ *             M5=GPIO22 M6=GPIO21 M7=GPIO19 M8=GPIO7
+ * 轉 Arduino pin: PB2=10 PB1=9 PB0=8 PD6=6 PD5=5 PD4=4 PD2=2 PB7=7
+ */
+#define MOTOR_COUNT 4
+#define MOTOR1_PIN 10
+#define MOTOR2_PIN  9
+#define MOTOR3_PIN  8
+#define MOTOR4_PIN  6
+#define MOTOR5_PIN  5
+#define MOTOR6_PIN  4
+#define MOTOR7_PIN  2
+#define MOTOR8_PIN  7   /* PB7/XTAL2, 僅內建振盪器時可用 */
+
+#define ESC_MIN 1000
+#define ESC_MAX 2000
+
+/* ---------- 機架設定 ---------- */
+#define KK_FRAME 0   /* 0 = Quad-X, 1 = Quad-+ */
+
+/* ---------- 控制回路 ---------- */
+#define CTRL_HZ        200
+#define CTRL_PERIOD_US (1000000UL / CTRL_HZ)
+#define FAILSAFE_MS    2000
+
+/* ---------- 陀螺儀校正 ---------- */
+#define GYRO_CAL_SAMPLES    400
+#define GYRO_DEG_PER_COUNT  0.6f   /* deg/s per ADC count, 請依實測調整 */
+#define GYRO_LPF            0.6f   /* 低通濾波係數 0~1 */
+
+/* ---------- PID 預設 ---------- */
+#define PID_OUT_LIMIT 300.0f
+#define PID_I_LIMIT   50.0f
+#define PID_ROLL_KP   3.0f
+#define PID_ROLL_KI   0.0f
+#define PID_ROLL_KD   8.0f
+#define PID_PITCH_KP  3.0f
+#define PID_PITCH_KI  0.0f
+#define PID_PITCH_KD  8.0f
+#define PID_YAW_KP    4.0f
+#define PID_YAW_KI    0.5f
+#define PID_YAW_KD    0.0f
+
+/* ---------- 序列緩衝 (ATmega168 僅 1KB SRAM, 請勿任意放大) ---------- */
+#define LINE_BUF_SIZE   72
+#define TEL_INTERVAL_MS 50
+
+#endif
