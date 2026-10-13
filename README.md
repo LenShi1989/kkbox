@@ -42,27 +42,26 @@ kkbox/
 │   ├── KKBOX原理圖-2.jpg
 │   ├── KKBOX接腳定義.xlsx
 │   └── KKmulticontroller_v5.5.pdf
-├── firmware/
-│   └── kkbox/                    Arduino 韌體 (IDE 開啟 kkbox.ino)
-│       ├── kkbox.ino             主程式: 控制回路 + 序列 JSON 協定
-│       ├── config.h              腳位對照與可調參數
-│       ├── pid.h                 PID 演算法
-│       ├── gyro.h                三軸陀螺儀讀取 / 校正 / 濾波
-│       ├── mixer.h               四軸混控 (自主平衡輸出)
-│       └── jsonutil.h            輕量 JSON 解析 (無動態記憶體)
+├── kkbox/                        Arduino 韌體 (IDE 開啟 kkbox.ino)
+│   ├── kkbox.ino                 主程式: 控制回路 + 序列 JSON 協定
+│   ├── config.h                  腳位對照與可調參數
+│   ├── pid.h                     PID 演算法
+│   ├── gyro.h                    三軸陀螺儀讀取 / 校正 / 濾波
+│   ├── mixer.h                   四軸混控 (自主平衡輸出)
+│   └── jsonutil.h                輕量 JSON 解析 (無動態記憶體)
 └── tools/
     └── kkbox_monitor.py          電腦端序列埠遠端測試工具 (pyserial)
 ```
 
 ## 開發環境
 
-- Arduino IDE, 開啟 `firmware/kkbox/kkbox.ino`
+- Arduino IDE, 開啟 `kkbox/kkbox.ino`
 - 開發板: `Arduino Pro or Pro Mini` → `ATmega168, 8MHz` (本板依 docs 使用內建 8MHz RC 振盪器)
 - 燒錄: 透過 ISP (AVRISP/Arduino as ISP)，或先燒 bootloader 後用 USB-TTL 走 RS232
 
 ## Arduino 腳位對照
 
-GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `firmware/kkbox/config.h`）：
+GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 
 | 功能 | GPIO | 埠 | Arduino | 說明 |
 | --- | --- | --- | --- | --- |
