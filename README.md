@@ -31,14 +31,27 @@
 ## 專案結構
 
 ```
-firmware/kkbox/       Arduino 韌體 (Arduino IDE 開啟 kkbox.ino)
-  kkbox.ino           主程式: 控制回路 + 序列 JSON 協定
-  config.h            腳位對照與可調參數
-  pid.h               PID 演算法
-  gyro.h              三軸陀螺儀讀取 / 校正 / 濾波
-  mixer.h             四軸混控 (自主平衡輸出)
-  jsonutil.h          輕量 JSON 解析 / 組字串 (無動態記憶體)
-tools/kkbox_monitor.py 電腦端序列埠遠端測試工具 (pyserial)
+kkbox/
+├── README.md                     專案說明
+├── docs/                         硬體參考資料
+│   ├── KK飛控板-1.png
+│   ├── KK飛控板-2.png
+│   ├── KK飛控板-3.png
+│   ├── KK飛控板-4.png
+│   ├── KKBOX原理圖-1.jpg
+│   ├── KKBOX原理圖-2.jpg
+│   ├── KKBOX接腳定義.xlsx
+│   └── KKmulticontroller_v5.5.pdf
+├── firmware/
+│   └── kkbox/                    Arduino 韌體 (IDE 開啟 kkbox.ino)
+│       ├── kkbox.ino             主程式: 控制回路 + 序列 JSON 協定
+│       ├── config.h              腳位對照與可調參數
+│       ├── pid.h                 PID 演算法
+│       ├── gyro.h                三軸陀螺儀讀取 / 校正 / 濾波
+│       ├── mixer.h               四軸混控 (自主平衡輸出)
+│       └── jsonutil.h            輕量 JSON 解析 (無動態記憶體)
+└── tools/
+    └── kkbox_monitor.py          電腦端序列埠遠端測試工具 (pyserial)
 ```
 
 ## 開發環境
