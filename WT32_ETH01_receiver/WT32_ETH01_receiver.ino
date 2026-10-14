@@ -16,6 +16,7 @@
  */
 
 #include <Arduino.h>
+#include "soc/rtc_cntl_reg.h"   /* BOD (電壓不足偵測) 停用 */
 #include "config.h"
 #include "settings.h"
 #include "kkbox.h"
@@ -25,6 +26,9 @@ static uint32_t bootMs = 0;
 static bool     apStarted = false;
 
 void setup() {
+  /* 停用電壓不足偵測 (BOD): 避免 WiFi/RJ45(PHY) 瞬間電流造成 brownout reset */
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
   Serial.begin(115200);
   delay(200);
   Serial.println();
