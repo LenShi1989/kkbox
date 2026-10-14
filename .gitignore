@@ -1,2 +1,4 @@
-# ESP32 SPIFFS 打包產物
+# ESP32 / Arduino 編譯產物
+build/
 spiffs.bin
+*.ino.*.bin

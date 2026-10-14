@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 
 rem ============================================================
 rem  build_spiffs.bat
-rem  將 sketch 的 data\ 目錄打包成 SPIFFS 映像檔 spiffs.bin
+rem  將 sketch 的 data\ 目錄打包成 SPIFFS 映像檔 build\spiffs.bin
 rem
 rem  用法:
 rem    build_spiffs.bat <sketch資料夾> [SPIFFS大小(bytes)]
@@ -18,6 +18,8 @@ rem  預設大小(依專案/分割表):
 rem    WT32_ETH01_receiver : 0x160000  (Default 4MB with spiffs)
 rem    ESP32_D1_mini_rc    : 0x20000   (Minimal SPIFFS 1.9MB APP)
 rem
+rem  輸出: <sketch>\build\spiffs.bin
+rem
 rem  可用環境變數 MKSPIFFS_EXE 指定 mkspiffs.exe 路徑;
 rem  否則自動由 PATH 或 Arduino15 ESP32 工具鏈尋找。
 rem ============================================================
@@ -30,6 +32,11 @@ if not exist "%SKETCH%\data\" (
   echo [錯誤] 找不到 data 資料夾: "%SKETCH%\data"
   exit /b 1
 )
+
+rem ---- 輸出資料夾 (build\) ----
+set "OUT_DIR=%SKETCH%\build"
+if not exist "%OUT_DIR%\" mkdir "%OUT_DIR%"
+set "OUT=%OUT_DIR%\spiffs.bin"
 
 rem ---- 決定 SPIFFS 分割區大小 ----
 set "SIZE=%~2"
@@ -64,22 +71,14 @@ echo.
 echo   sketch   : !SKETCH!
 echo   mkspiffs : !MKSPIFFS!
 echo   size     : !SIZE! ^(!SIZE_DEC! bytes^)
-echo   打包 data\ ^-^> spiffs.bin ...
+echo   打包 data\ ^-^> build\spiffs.bin ...
 echo.
 
-"!MKSPIFFS!" -c "!SKETCH!\data" -p 256 -b 4096 -s !SIZE_DEC! "!SKETCH!\spiffs.bin"
-if errorlevel 1 (
-  echo.
-  echo [錯誤] mkspiffs 打包失敗
-  exit /b 1
-)
+"!MKSPIFFS!" -c "!SKETCH!\data" -p 256 -b 4096 -s !SIZE_DEC! "%OUT%"
 
 echo.
-echo [完成] 已產生: "!SKETCH!\spiffs.bin"
+echo [完成] 已產生: "%OUT%"
 echo.
-echo 燒錄範例 ^(依實際 COM 埠與 partition offset^):
-echo   esptool.py --chip esp32 --port COMx write_flash 0x290000 "!SKETCH!\spiffs.bin"
+echo 燒錄範例 (依實際 COM 埠與 partition offset):
+echo   esptool.py --chip esp32 --port COMx write_flash 0x290000 "%OUT%"
 echo   WT32-ETH01 offset=0x290000 / ESP32 D1 mini offset=0x3D0000
-echo.
-
-endlocal

@@ -296,12 +296,12 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 
 `.ino` 不含網頁，`data/` 內容必須另外寫入 SPIFFS：
 
-- **專案附的打包腳本（推薦）**：會自動尋找 mkspiffs 並依專案判斷分割大小，於各專案目錄產生 `spiffs.bin`。
+- **專案附的打包腳本（推薦）**：會自動尋找 mkspiffs 並依專案判斷分割大小，輸出至各專案的 `build\spiffs.bin`。
   ```powershell
   tools\build_spiffs.bat WT32_ETH01_receiver   # size 0x160000 (offset 0x290000)
   tools\build_spiffs.bat ESP32_D1_mini_rc      # size 0x20000  (offset 0x3D0000)
   ```
-  產生後再用 esptool 燒入：`esptool.py --chip esp32 --port COMx write_flash <offset> spiffs.bin`。
+  產生後再用 esptool 燒入：`esptool.py --chip esp32 --port COMx write_flash <offset> build\spiffs.bin`。
 - **Arduino IDE 1.8.x**：安裝 **ESP32 Sketch Data Upload** 外掛，
   使用 `Tools → ESP32 Sketch Data Upload`（分割區會依所選開發板自動帶入）。
 - **Arduino IDE 2.x**：官方尚未支援外掛，請改用下列任一方式：
