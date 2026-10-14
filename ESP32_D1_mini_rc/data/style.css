@@ -44,6 +44,7 @@ html[data-theme="glass"] .login-box,
 html[data-theme="glass"] .toast,
 html[data-theme="glass"] .tbl,
 html[data-theme="glass"] .hamburger,
+html[data-theme="glass"] .theme-switch,
 html[data-theme="glass"] input,
 html[data-theme="glass"] select{
   backdrop-filter:blur(14px) saturate(140%);
@@ -76,9 +77,10 @@ nav a{padding:10px 14px;border-radius:8px;color:var(--fg);cursor:pointer;display
 nav a:hover{background:var(--panel2)}
 nav a.active{background:var(--accent2);color:#fff}
 
-/* ---------- 主題切換 ---------- */
-.theme-switch{display:flex;gap:6px;margin:0 14px;padding:5px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
-.theme-btn{flex:1;padding:7px 0;margin:0;background:transparent;border:none;border-radius:7px;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
+/* ---------- 主題切換 (右上角) ---------- */
+.theme-switch{display:flex;gap:4px;margin-left:auto;padding:4px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.theme-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;margin:0;background:transparent;border:none;border-radius:7px;color:var(--muted);font:inherit;font-size:12px;cursor:pointer}
+.theme-btn svg{display:block}
 .theme-btn:hover{background:var(--panel);color:var(--fg)}
 .theme-btn.active{background:var(--accent2);color:#fff}
 
@@ -87,7 +89,7 @@ nav a.active{background:var(--accent2);color:#fff}
 
 /* ---------- 頂列 + 漢堡 ---------- */
 main{flex:1;padding:20px 30px 30px;overflow:auto;max-width:1100px;width:100%}
-.topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .hamburger{
   width:42px;height:36px;flex:0 0 auto;padding:0;margin:0;cursor:pointer;
   background:var(--panel);border:1px solid var(--line);border-radius:9px;
@@ -98,7 +100,7 @@ main{flex:1;padding:20px 30px 30px;overflow:auto;max-width:1100px;width:100%}
 body.nav-open .hamburger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
 body.nav-open .hamburger span:nth-child(2){opacity:0}
 body.nav-open .hamburger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-.topbar-title{font-weight:700;font-size:16px}
+.topbar-title{font-weight:700;font-size:16px;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .backdrop{display:none}
 
