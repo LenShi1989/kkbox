@@ -183,7 +183,7 @@ KK飛控板 ──UART(115200)── WT32-ETH01 接收機 ──RJ45/WiFi── 
 | `ArduinoJson`（v7）                              | 遙控器解析遙測                    |
 
 > ElegantOTA 需在 `build_opt.h` 定義 `-DELEGANTOTA_USE_ASYNC_WEBSERVER=1`（兩專案已附）。
-> 兩專案的網頁檔在 `data/` 目錄，需上傳至裝置的 SPIFFS（見下方「上傳網頁檔」）。
+> 兩專案的網頁檔在 `data/` 目錄，需上傳至裝置的 SPIFFS（見下方「燒錄方法 SOP」）。
 
 ### WT32-ETH01 接收機（`WT32_ETH01_receiver/`）
 
@@ -249,12 +249,76 @@ Y   0.8        1460
 {"cmd":"led","mode":"on"}
 ```
 
-### 上傳網頁檔（SPIFFS）
+## 燒錄方法 SOP（WT32_ETH01_receiver / ESP32_D1_mini_rc）
 
-`.ino` 只含程式；`data/` 內的網頁需另外上傳：
+> 兩個專案都要燒 **程式（`.ino`）** 與 **網頁（`data/` → SPIFFS）** 兩部分，缺一網頁會 404。
+> 專案內的 `build_opt.h`（`-DELEGANTOTA_USE_ASYNC_WEBSERVER=1`）是編譯必要檔，請勿刪除。
+> 兩個專案各自獨立，直接開啟該資料夾內的 `.ino` 即可（IDE 會自動載入同資料夾的 `config.h/web.h/...`）。
 
-- Arduino IDE：安裝 **ESP32 Sketch Data Upload** 外掛（`Tools → ESP32 Sketch Data Upload`），或
-- 命令列：使用 `mkspiffs`/`esptool` 將 `data/` 打包後寫入 `spiffs` 分區。
+### 0. 前置準備
+
+1. **Arduino IDE 2.x**（或 `arduino-cli`）。
+2. 安裝 ESP32 開發板：`檔案 → 偏好設定 → 額外開發板管理員網址` 填入
+   `https://espressif-download.espressif.com/dl/package_esp32_index.json`，
+   再於 `開發板管理員` 搜尋安裝 **esp32 by Espressif**（本專案以 **3.3.x** 驗證）。
+3. 安裝程式庫（程式庫管理員）：
+   `ESP Async WebServer`、`Async TCP`、`ElegantOTA`、`WebSockets`、
+   `Adafruit SSD1306`、`Adafruit GFX Library`、`ArduinoJson`（v7）。
+4. 驅動：USB-TTL（CH340/CP2102/FTDI）與遙控器的 USB 晶片驅動。
+
+### 1. 接收機（`WT32_ETH01_receiver/`）
+
+WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄。
+
+| USB-TTL | WT32-ETH01 | 說明 |
+| --- | --- | --- |
+| TX | RXD | 交叉 |
+| RX | TXD | 交叉 |
+| GND | GND | 務必共地 |
+| 3V3 | 3V3 | 供電（或板子另接電源） |
+
+步驟：
+
+1. 將 **IO0 接 GND**（進入下載模式）。
+2. 接上 USB-TTL，Arduino IDE 開發板選 **`WT32-ETH01 Ethernet Module`**（FQBN `esp32:esp32:wt32-eth01`）。
+3. 選對序列埠 → 按 **上傳**（編譯並燒錄程式）。
+4. 燒錄完成後，**移開 IO0 的接地** 並按 RESET（或重新上電）進入執行。
+
+### 2. 遙控器（`ESP32_D1_mini_rc/`）
+
+1. 以 micro-USB 連接電腦。
+2. 開發板選 **`WEMOS D1 MINI ESP32`**（FQBN `esp32:esp32:d1_mini32`）。
+3. **Partition Scheme 選 `Minimal SPIFFS (1.9MB APP with OTA / 190KB SPIFFS)`**
+   ——程式約 1.26MB，用預設分區（1.25MB）會編譯失敗。
+4. 按 **上傳**。若出現連線失敗，按住板上的 **BOOT(IO0)** 鍵再上傳。
+
+### 3. 燒錄網頁檔（`data/` → SPIFFS）
+
+`.ino` 不含網頁，`data/` 內容必須另外寫入 SPIFFS：
+
+- **Arduino IDE 1.8.x**：安裝 **ESP32 Sketch Data Upload** 外掛，
+  使用 `Tools → ESP32 Sketch Data Upload`（分割區會依所選開發板自動帶入）。
+- **Arduino IDE 2.x**：官方尚未支援外掛，請改用下列任一方式：
+  - **PlatformIO**：開啟專案後執行 `pio run -t uploadfs`（會依 partition table 自動燒入）。
+  - **arduino-cli + mkspiffs/esptool**：
+    1. 由 ESP32 核心的 `tools/partitions/<分割表>.csv` 查出 `spiffs` 分區的 **offset** 與 **size**；
+    2. 打包：`mkspiffs -c data -b 4096 -p 256 -s <size> spiffs.bin`；
+    3. 燒錄：`esptool.py --chip esp32 --port COMx write_flash <offset> spiffs.bin`。
+
+### 4. 開機與驗證
+
+- 序列埠監控 **115200 8N1** 可看開機 log（會顯示 WiFi/IP/SPIFFS 狀態）。
+- **接收機**：接 RJ45 會以 DHCP 取得 IP；若 20 秒內沒有任何網路，會啟動 SoftAP
+  `KKBOX-Receiver-Setup` / 密碼 `kkbox1234`。瀏覽器開啟其 IP，登入 `admin / kkbox`。
+- **遙控器**：無網路 15 秒後啟動 SoftAP `KKBOX-RC-Setup` / 密碼 `kkbox1234`，並於 OLED 顯示狀態。
+- 首次設定：接收機「使用者設定」取得 **裝置連結 Token**；遙控器「網路設定」填入接收機 **IP + Token**。
+
+### 5. 之後的更新：OTA
+
+- 瀏覽器開啟 `http://<裝置IP>/update`，以 `admin / kkbox` 驗證後上傳對應專案的 `.bin`
+  （Arduino IDE：`草稿碼 → 匯出已編譯二進位檔`）。
+- OTA **只更新程式**，不會更新 SPIFFS 網頁；改網頁仍需回到步驟 3。
+
 
 ### 主要 REST API（兩裝置共通，除註明外）
 
