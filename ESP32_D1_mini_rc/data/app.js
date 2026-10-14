@@ -177,10 +177,14 @@ $('wifi-scan').addEventListener('click', async () => {
 });
 $('wifi-list').addEventListener('change', (e) => { $('wifi-ssid').value = e.target.value; });
 $('wifi-save').addEventListener('click', async () => {
+  $('wifi-scan-state').textContent = '連線中…';
+  toast('連線中，請稍候…');
   try {
-    await api('/api/wifi', { method: 'POST', body: { ssid: $('wifi-ssid').value, pass: $('wifi-pass').value } });
-    toast('已儲存，嘗試連線');
-  } catch (e) { toast('儲存失敗', 'err'); }
+    const res = await api('/api/wifi', { method: 'POST', body: { ssid: $('wifi-ssid').value, pass: $('wifi-pass').value } });
+    const msg = '已連線，IP 位置：' + res.ip + '（系統將重新啟動）';
+    $('wifi-scan-state').textContent = msg;
+    toast(msg, 'ok');
+  } catch (e) { toast('連線失敗: ' + e.message, 'err'); }
 });
 $('wifi-clear').addEventListener('click', async () => {
   try { await api('/api/wifi', { method: 'POST', body: { action: 'clear' } }); toast('已清除'); }

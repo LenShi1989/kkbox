@@ -190,10 +190,22 @@ static void webSetup() {
     }
     gSet.ssid  = arg(r, "ssid");
     gSet.wpass = arg(r, "pass");
-    gPrefs.putString("ssid", gSet.ssid); gPrefs.putString("wpass", gSet.wpass);
     WiFi.mode(WIFI_AP_STA);      /* 保持 SoftAP 運作 */
-    WiFi.disconnect(); WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
-    sendOk(r);
+    WiFi.disconnect();
+    delay(20);
+    WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
+    /* 等待連線 (最多 15 秒); 成功才儲存並回報取得的 IP, 數秒後重啟系統 */
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000) delay(100);
+    if (WiFi.status() == WL_CONNECTED) {
+      gPrefs.putString("ssid", gSet.ssid); gPrefs.putString("wpass", gSet.wpass);
+      String ip = WiFi.localIP().toString();
+      Serial.printf("[WiFi] 已連線 %s -> %s, 5 秒後重啟\n", gSet.ssid.c_str(), ip.c_str());
+      sendJson(r, "{\"ok\":true,\"ip\":\"" + ip + "\"}");
+      gRebootAt = millis() + 5000;
+    } else {
+      sendErr(r, "WiFi 連線失敗, 請確認 SSID / 密碼");
+    }
   });
 
   /* 接收機連線設定 */
