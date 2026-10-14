@@ -42,6 +42,7 @@ html[data-theme="glass"] .card,
 html[data-theme="glass"] .sidebar,
 html[data-theme="glass"] .login-box,
 html[data-theme="glass"] .toast,
+html[data-theme="glass"] .modal-box,
 html[data-theme="glass"] .tbl,
 html[data-theme="glass"] .hamburger,
 html[data-theme="glass"] .theme-switch,
@@ -160,6 +161,14 @@ html[data-theme="glass"] .login-overlay{background-image:var(--bg-image);backgro
   border:1px solid var(--line);padding:12px 20px;border-radius:10px;z-index:200;box-shadow:var(--shadow)}
 .toast.ok{border-color:var(--ok)}
 .toast.err{border-color:var(--err)}
+
+/* ---------- 彈窗 ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:300;padding:16px}
+.modal.hidden{display:none}
+.modal-box{width:340px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+.modal-box h3{margin:0 0 8px;font-size:18px}
+.modal-box p{margin:0 0 18px;color:var(--muted);line-height:1.5}
+.modal-box button{width:100%}
 
 /* ---------- 模擬搖桿 ---------- */
 .joy-wrap{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start}

@@ -213,7 +213,9 @@ static void webSetup() {
     if (arg(r, "action") == "clear") {
       gSet.ssid = ""; gSet.wpass = "";
       settingsSaveWifi(); WiFi.disconnect(true);
-      sendOk(r); return;
+      sendJson(r, "{\"ok\":true}");
+      gRebootAt = millis() + 5000;   /* 清除後重啟系統 */
+      return;
     }
     gSet.ssid  = arg(r, "ssid");
     gSet.wpass = arg(r, "pass");

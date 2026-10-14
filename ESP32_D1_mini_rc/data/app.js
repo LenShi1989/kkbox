@@ -26,6 +26,14 @@ function toast(msg, kind = 'ok') {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
 }
 
+/* ---------- 彈窗 ---------- */
+function showModal(title, msg) {
+  $('modal-title').textContent = title;
+  $('modal-msg').textContent = msg;
+  $('modal').classList.remove('hidden');
+}
+$('modal-ok').addEventListener('click', () => $('modal').classList.add('hidden'));
+
 /* ---------- 主題切換 (明亮 / 暗黑 / 玻璃) ---------- */
 const THEME_KEY = 'kkbox-rc-theme';
 function setTheme(t) {
@@ -187,8 +195,10 @@ $('wifi-save').addEventListener('click', async () => {
   } catch (e) { toast('連線失敗: ' + e.message, 'err'); }
 });
 $('wifi-clear').addEventListener('click', async () => {
-  try { await api('/api/wifi', { method: 'POST', body: { action: 'clear' } }); toast('已清除'); }
-  catch (e) { toast('失敗', 'err'); }
+  try {
+    await api('/api/wifi', { method: 'POST', body: { action: 'clear' } });
+    showModal('已刪除', '連線設定已刪除，系統將重新啟動…');
+  } catch (e) { toast('清除失敗', 'err'); }
 });
 
 async function loadNet() {
