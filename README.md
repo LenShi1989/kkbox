@@ -4,27 +4,33 @@
 
 ---
 
-| 外部端子 / 模組標示 | GPIO編號 | Pin 腳編號 | 功能與說明                                         |
-| ------------------- | -------- | ---------- | -------------------------------------------------- |
-| VCC                 | N/A      | N/A        | DC 5V                                              |
-| GND                 | N/A      | N/A        | 接地                                               |
-| RS232-RX            | 17       | 31         | RS232 RX                                           |
-| RS232-TX            | 18       | 32         | RS232 TX                                           |
-| Roll Gain           | 11       | 26         | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
-| Pitch Gain          | 12       | 27         | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
-| Yaw Gain            | 13       | 28         | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）     |
-| 三軸陀螺儀          | 8        | 23         | X+Y+Z，共三顆                                      |
-| Pitch 陀螺儀        | 9        | 24         | Gyro pitch                                         |
-| Roll 陀螺儀         | 10       | 25         | Gyro roll                                          |
-| Motor 1 (M1)        | 2        | 14         | 第 1 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 2 (M2)        | 1        | 13         | 第 2 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 3 (M3)        | 0        | 12         | 第 3 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 4 (M4)        | 23       | 11         | 第 4 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 5 (M5)        | 22       | 10         | 第 5 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 6 (M6)        | 21       | 9          | 第 6 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 7 (M7)        | 19       | 1          | 第 7 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 8 (M8)        | 7        | 8          | 第 8 號馬達 / 電子調速器（ESC）控制輸出            |
-| LED1                | 6        | 7          | 板載LED燈                                          |
+| 外部端子 / 模組標示 | GPIO編號 | Pin 腳編號   | 功能與說明                                         |
+| ------------------- | -------- | ------------ | -------------------------------------------------- |
+| VCC                 | N/A      | 4,6          | DC 5V                                              |
+| GND                 | N/A      | 3,5          | 接地                                               |
+| RS232-RX            | 16       | 30           | RS232 RX(115200 bps, 8N1)                          |
+| RS232-TX            | 17       | 31           | RS232 TX(115200 bps, 8N1)                          |
+| Roll Gain           | 11       | 26           | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
+| Pitch Gain          | 12       | 27           | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
+| Yaw Gain            | 13       | 28           | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）     |
+| Yaw 陀螺儀          | 8        | 23           | Gyro Yaw                                           |
+| Pitch 陀螺儀        | 9        | 24           | Gyro pitch                                         |
+| Roll 陀螺儀         | 10       | 25           | Gyro roll                                          |
+| Motor 1 (M1)        | 2        | 14           | 第 1 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 2 (M2)        | 1        | 13           | 第 2 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 3 (M3)        | 0        | 12           | 第 3 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 4 (M4)        | 23       | 11           | 第 4 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 5 (M5)        | 22       | 10           | 第 5 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 6 (M6)        | 21       | 9            | 第 6 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 7 (M7)        | 19       | 1            | 第 7 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 8 (M8)        | 7        | 8            | 第 8 號馬達 / 電子調速器（ESC）控制輸出            |
+| LED1                | 6        | 7 板載LED1燈 |
+| ISP 燒錄器接腳(1)   | 4        | 16           | MISO                                               |
+| ISP 燒錄器接腳(2)   | N/A      | 4,6          | VCC 5V                                             |
+| ISP 燒錄器接腳(3)   | 5        | 17           | SCK                                                |
+| ISP 燒錄器接腳(4)   | 3        | 15           | MOSI                                               |
+| ISP 燒錄器接腳(5)   | 14       | 29           | RESET                                              |
+| ISP 燒錄器接腳(6)   | N/A      | 3,5          | 接地                                               |
 
 ---
 
@@ -71,7 +77,6 @@ kkbox/
     └── kkbox_monitor.py          電腦端序列埠遠端測試工具 (pyserial)
 ```
 
-
 ## 開發環境
 
 - Arduino IDE, 開啟 `kkbox/kkbox.ino`
@@ -84,15 +89,15 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 
 | 功能                | GPIO     | 埠          | Arduino   | 說明                   |
 | ------------------- | -------- | ----------- | --------- | ---------------------- |
-| RS232 RX            | 17       | PD0         | D0        | 硬體 UART RXD          |
-| RS232 TX            | 18       | PD1         | D1        | 硬體 UART TXD          |
-| 陀螺儀 Roll         | 8        | ADC0        | A0        | 壓電陀螺儀             |
+| RS232 RX            | 16       | PD0         | D0        | 硬體 UART RXD          |
+| RS232 TX            | 17       | PD1         | D1        | 硬體 UART TXD          |
+| 陀螺儀 Yaw          | 8        | ADC0        | A0        | 壓電陀螺儀             |
 | 陀螺儀 Pitch        | 9        | ADC1        | A1        | 壓電陀螺儀             |
-| 陀螺儀 Yaw          | 10       | ADC2        | A2        | 壓電陀螺儀             |
+| 陀螺儀 Roll         | 10       | ADC2        | A2        | 壓電陀螺儀             |
 | Roll/Pitch/Yaw Gain | 11/12/13 | ADC3/4/5    | A3/A4/A5  | 可變電阻（預設停用）   |
 | M1 / M2 / M3        | 2/1/0    | PB2/PB1/PB0 | D10/D9/D8 | ESC 輸出               |
-| M4 / M5 / M6        | 23/22/21 | PD6/PD5/PD4 | D6/D5/D4  | ESC 輸出               |
-| M7                  | 19       | PD2         | D2        | ESC 輸出               |
+| M4 / M5 / M6        | 23/22/21 | PD7/PD6/PD5 | D7/D6/D5  | ESC 輸出               |
+| M7                  | 19       | PD3         | D3        | ESC 輸出               |
 | M8                  | 7        | PB7         | (XTAL2)   | 僅內建振盪器時可用     |
 | LED1                | 6        | PB6         | (XTAL1)   | 板載 LED，用直接埠控制 |
 
@@ -101,7 +106,7 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 
 ## 序列埠 JSON 協定
 
-鮑率 **57600 8N1**，每行一筆 JSON，以 `\n` 結尾。
+鮑率 **115200 8N1**，每行一筆 JSON，以 `\n` 結尾。
 
 ### 電腦 → 飛控板（控制命令）
 
@@ -157,7 +162,7 @@ python tools/kkbox_monitor.py --port COM3
 ## 無線傳輸架構（WT32-ETH01 接收機 + ESP32 D1 mini 遙控器）
 
 ```
-KK飛控板 ──UART(57600)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
+KK飛控板 ──UART(115200)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
    (Atmega168)            (有線+無線 網頁/WS)                          (OLED + 網頁模擬搖桿)
                                  │
                                  └── 瀏覽器 (有線或無線網頁，即時 WebSocket)
@@ -169,13 +174,13 @@ KK飛控板 ──UART(57600)── WT32-ETH01 接收機 ──RJ45/WiFi── �
 
 ### 共用程式庫
 
-| 程式庫 | 用途 |
-| --- | --- |
-| `ESP Async WebServer`（ESP32Async）+ `Async TCP` | 非同步網頁伺服器與 WebSocket |
-| `ElegantOTA` | 網頁 OTA 韌體更新 |
-| `WebSockets`（arduinoWebSockets） | 遙控器以 WebSocket 用戶端連接收機 |
-| `Adafruit SSD1306` + `Adafruit GFX Library` | 遙控器 OLED |
-| `ArduinoJson`（v7） | 遙控器解析遙測 |
+| 程式庫                                           | 用途                              |
+| ------------------------------------------------ | --------------------------------- |
+| `ESP Async WebServer`（ESP32Async）+ `Async TCP` | 非同步網頁伺服器與 WebSocket      |
+| `ElegantOTA`                                     | 網頁 OTA 韌體更新                 |
+| `WebSockets`（arduinoWebSockets）                | 遙控器以 WebSocket 用戶端連接收機 |
+| `Adafruit SSD1306` + `Adafruit GFX Library`      | 遙控器 OLED                       |
+| `ArduinoJson`（v7）                              | 遙控器解析遙測                    |
 
 > ElegantOTA 需在 `build_opt.h` 定義 `-DELEGANTOTA_USE_ASYNC_WEBSERVER=1`（兩專案已附）。
 > 兩專案的網頁檔在 `data/` 目錄，需上傳至裝置的 SPIFFS（見下方「上傳網頁檔」）。
@@ -186,12 +191,12 @@ KK飛控板 ──UART(57600)── WT32-ETH01 接收機 ──RJ45/WiFi── �
 - 功能：RJ45（LAN8720A）+ WiFi、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
 - 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**PID 設定**、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
 
-| WT32-ETH01 | 連接對象 | 說明 |
-| --- | --- | --- |
-| GPIO5 (RX) | KKBOX RS232-TX | 5V→3.3V 位準轉換 |
-| GPIO17 (TX) | KKBOX RS232-RX | 3.3V→5V 位準轉換 |
-| GND | KKBOX GND | 務必共地 |
-| RJ45 | 路由器 / 交換器 | 有線網路（可用 DHCP 或固定 IP） |
+| WT32-ETH01  | 連接對象        | 說明                            |
+| ----------- | --------------- | ------------------------------- |
+| GPIO5 (RX)  | KKBOX RS232-TX  | 5V→3.3V 位準轉換                |
+| GPIO17 (TX) | KKBOX RS232-RX  | 3.3V→5V 位準轉換                |
+| GND         | KKBOX GND       | 務必共地                        |
+| RJ45        | 路由器 / 交換器 | 有線網路（可用 DHCP 或固定 IP） |
 
 > RJ45（LAN8720A）使用 GPIO16(RST)/18(MDIO)/23(MDC) 與 GPIO0 時脈輸入，已於 `config.h` 設定。
 
@@ -202,11 +207,11 @@ KK飛控板 ──UART(57600)── WT32-ETH01 接收機 ──RJ45/WiFi── �
 - 功能：WiFi 連線、以 WebSocket 連接收收機、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、OTA、登入。
 - 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**模擬搖桿**、**OTA 更新**、**使用者設定**。
 
-| ESP32 D1 mini | 連接對象 | 說明 |
-| --- | --- | --- |
-| GPIO21 (SDA) | SSD1306 SDA | I2C 資料 |
-| GPIO22 (SCL) | SSD1306 SCL | I2C 時脈 |
-| 3V3 / GND | SSD1306 VCC / GND | 供電 |
+| ESP32 D1 mini | 連接對象          | 說明     |
+| ------------- | ----------------- | -------- |
+| GPIO21 (SDA)  | SSD1306 SDA       | I2C 資料 |
+| GPIO22 (SCL)  | SSD1306 SCL       | I2C 時脈 |
+| 3V3 / GND     | SSD1306 VCC / GND | 供電     |
 
 OLED 顯示內容：
 
@@ -227,7 +232,7 @@ Y   0.8        1460
 1. 接收機接上 RJ45（或開機後無網路 20 秒會啟動 SoftAP `KKBOX-Receiver-Setup` / `kkbox1234`），瀏覽器開啟其 IP，以 `admin`/`kkbox` 登入。
 2. 於「使用者設定」複製 **裝置連結 Token**。
 3. 遙控器開機（無網路 15 秒會啟動 SoftAP `KKBOX-RC-Setup`），登入後於「網路設定」填入 **接收機 IP 與 Token**，即自動建立 WebSocket 連線。
-3. 進入「模擬搖桿」即可解鎖、控制油門與 Roll/Pitch/Yaw。
+4. 進入「模擬搖桿」即可解鎖、控制油門與 Roll/Pitch/Yaw。
 
 ### WebSocket 協定
 
@@ -253,21 +258,21 @@ Y   0.8        1460
 
 ### 主要 REST API（兩裝置共通，除註明外）
 
-| 方法 | 路徑 | 說明 |
-| --- | --- | --- |
-| POST | `/api/login` | `user`,`pass` → `{token}`；設 Cookie `sess` |
-| POST | `/api/logout` | 登出 |
-| GET | `/api/status` | 系統/網路/連線狀態 |
-| GET | `/api/telemetry` | 最新飛控遙測 |
-| POST | `/api/command` | `cmd`＝JSON 命令字串，轉送飛控板 |
-| GET | `/api/fs` | SPIFFS 容量與檔案清單 |
-| GET | `/api/scan` | WiFi 掃描 |
-| POST | `/api/wifi` | `ssid`,`pass` 或 `action=clear` |
-| GET/POST | `/api/user` | 帳號設定（POST 需 `cur` 目前密碼） |
-| GET/POST | `/api/net`（僅接收機） | RJ45 DHCP/固定 IP（儲存後重開機） |
-| GET/POST | `/api/pid`（僅接收機） | 三軸 PID，儲存後下傳飛控板 |
-| GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token |
-| — | `/update` | ElegantOTA 上傳頁（HTTP 驗證） |
+| 方法     | 路徑                    | 說明                                        |
+| -------- | ----------------------- | ------------------------------------------- |
+| POST     | `/api/login`            | `user`,`pass` → `{token}`；設 Cookie `sess` |
+| POST     | `/api/logout`           | 登出                                        |
+| GET      | `/api/status`           | 系統/網路/連線狀態                          |
+| GET      | `/api/telemetry`        | 最新飛控遙測                                |
+| POST     | `/api/command`          | `cmd`＝JSON 命令字串，轉送飛控板            |
+| GET      | `/api/fs`               | SPIFFS 容量與檔案清單                       |
+| GET      | `/api/scan`             | WiFi 掃描                                   |
+| POST     | `/api/wifi`             | `ssid`,`pass` 或 `action=clear`             |
+| GET/POST | `/api/user`             | 帳號設定（POST 需 `cur` 目前密碼）          |
+| GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）           |
+| GET/POST | `/api/pid`（僅接收機）  | 三軸 PID，儲存後下傳飛控板                  |
+| GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                          |
+| —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）              |
 
 > 所有 `/api/*`（除 `login`/`logout`）需帶 Session Cookie 或 `X-Auth` Token，否則回 `401`。
 

@@ -7,11 +7,11 @@
 #define FW_VERSION "1.0.0"
 
 /* ---------- RS232 (硬體 UART) ----------
- * 依據 docs/KKBOX接腳定義: RS232-RX = GPIO17 = PD0/RXD
- *                          RS232-TX = GPIO18 = PD1/TXD
+ * 依據 docs/KKBOX接腳定義: RS232-RX = PD0 = GPIO16 = Arduino D0 (RXD)
+ *                          RS232-TX = PD1 = GPIO17 = Arduino D1 (TXD)
  * 因此直接使用 Arduino 硬體 Serial (D0 / D1)。
  */
-#define SERIAL_BAUD 57600
+#define SERIAL_BAUD 115200
 
 /* ---------- 板載 LED1 ----------
  * 原理圖 LED1 = ATmega168 PB6 (GPIO6)。
@@ -46,11 +46,13 @@ static inline void ledWrite(uint8_t on) {
 }
 
 /* ---------- 陀螺儀 (壓電式, 接 ADC) ----------
- * GPIO8 / GPIO9 / GPIO10 = PC0 / PC1 / PC2 = A0 / A1 / A2
+ * Yaw   = GPIO8  = PC0 = A0
+ * Pitch = GPIO9  = PC1 = A1
+ * Roll  = GPIO10 = PC2 = A2
  */
-#define GYRO_ROLL_PIN   A0
+#define GYRO_ROLL_PIN   A2
 #define GYRO_PITCH_PIN  A1
-#define GYRO_YAW_PIN    A2
+#define GYRO_YAW_PIN    A0
 
 #define GYRO_REVERSE_ROLL  0
 #define GYRO_REVERSE_PITCH 0
@@ -67,17 +69,18 @@ static inline void ledWrite(uint8_t on) {
 /* ---------- 馬達 / ESC 輸出 ----------
  * GPIO 對照: M1=GPIO2  M2=GPIO1  M3=GPIO0  M4=GPIO23
  *             M5=GPIO22 M6=GPIO21 M7=GPIO19 M8=GPIO7
- * 轉 Arduino pin: PB2=10 PB1=9 PB0=8 PD6=6 PD5=5 PD4=4 PD2=2 PB7=7
+ * 轉 Arduino pin: M1=D10(PB2) M2=D9(PB1) M3=D8(PB0)
+ *                 M4=D7(PD7)  M5=D6(PD6) M6=D5(PD5) M7=D3(PD3)
  */
 #define MOTOR_COUNT 4
 #define MOTOR1_PIN 10
 #define MOTOR2_PIN  9
 #define MOTOR3_PIN  8
-#define MOTOR4_PIN  6
-#define MOTOR5_PIN  5
-#define MOTOR6_PIN  4
-#define MOTOR7_PIN  2
-#define MOTOR8_PIN  7   /* PB7/XTAL2, 僅內建振盪器時可用 */
+#define MOTOR4_PIN  7
+#define MOTOR5_PIN  6
+#define MOTOR6_PIN  5
+#define MOTOR7_PIN  3
+#define MOTOR8_PIN  7   /* M8=GPIO7=PB7, Arduino 無對應腳位(需直接埠操作); MOTOR_COUNT=4 時未使用 */
 
 #define ESC_MIN 1000
 #define ESC_MAX 2000
