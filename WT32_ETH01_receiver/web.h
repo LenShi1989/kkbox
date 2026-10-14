@@ -218,8 +218,8 @@ static void webSetup() {
     gSet.ssid  = arg(r, "ssid");
     gSet.wpass = arg(r, "pass");
     settingsSaveWifi();
+    WiFi.mode(WIFI_AP_STA);      /* 保持 SoftAP 運作 */
     WiFi.disconnect();
-    WiFi.mode(WIFI_STA);
     WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
     sendOk(r);
   });

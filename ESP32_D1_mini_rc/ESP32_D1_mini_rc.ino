@@ -27,8 +27,6 @@ static AsyncWebSocket localWs("/ws");
 #include "link.h"
 #include "web.h"
 
-static uint32_t bootMs = 0;
-static bool     apStarted = false;
 static uint32_t lastOled = 0;
 
 void setup() {
@@ -46,8 +44,20 @@ void setup() {
   settingsLoad();
   oledBegin();
 
-  WiFi.mode(WIFI_STA);
+  /* ---------- WiFi: STA + AP 共存 ---------- */
+  /* 一律啟動 SoftAP, 確保任何情況下都能進入設定頁; STA 則連線外部 WiFi */
+  WiFi.mode(WIFI_AP_STA);
   WiFi.setHostname("kkbox-rc");
+  {
+    /* SoftAP 固定 192.168.5.x, 與接收機 192.168.4.x 區隔 */
+    IPAddress apIp, apMask;
+    apIp.fromString(AP_IP_ADDR);
+    apMask.fromString("255.255.255.0");
+    WiFi.softAPConfig(apIp, apIp, apMask);
+    String ap = apSsid();
+    WiFi.softAP(ap.c_str(), AP_PASS);
+    Serial.printf("[AP] %s -> %s\n", ap.c_str(), WiFi.softAPIP().toString().c_str());
+  }
   if (gSet.ssid.length()) {
     WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
     Serial.printf("[WiFi] connecting to %s ...\n", gSet.ssid.c_str());
@@ -57,13 +67,12 @@ void setup() {
   if (gSet.rxHost.length()) linkBegin();
   else Serial.println("[LINK] 尚未設定接收機, 請由網頁設定");
 
-  bootMs = millis();
   if (gOledOk) { oled.clearDisplay(); oled.display(); }
   Serial.println("[WEB] 伺服器已啟動 (port 80)");
 }
 
 void loop() {
-  /* WiFi 斷線自動重連 */
+  /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA) */
   static uint32_t lastWifiTry = 0;
   if (gSet.ssid.length() && WiFi.status() != WL_CONNECTED) {
     if (millis() - lastWifiTry > 10000) {
@@ -71,16 +80,6 @@ void loop() {
       WiFi.disconnect();
       WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
     }
-  }
-
-  /* 無連線時啟動 SoftAP 供設定 */
-  if (!apStarted && gSet.ssid.length() == 0 &&
-      millis() - bootMs > AP_FALLBACK_MS) {
-    apStarted = true;
-    WiFi.mode(WIFI_AP_STA);
-    String ssid = apSsid();
-    WiFi.softAP(ssid.c_str(), AP_PASS);
-    Serial.printf("[AP] %s -> %s\n", ssid.c_str(), WiFi.softAPIP().toString().c_str());
   }
 
   linkLoop();

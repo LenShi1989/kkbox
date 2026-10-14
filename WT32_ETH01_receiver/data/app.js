@@ -137,9 +137,7 @@ async function loadStatus() {
   const dot = $('net-dot');
   dot.classList.toggle('on', s.eth.link || s.wifi.connected);
 
-  if (s.ap && s.ap.active) {
-    $('wifi-scan-state').textContent = 'SoftAP: ' + s.ap.ssid + ' (' + s.ap.ip + ')';
-  }
+  $('s-ap').textContent = (s.ap && s.ap.active) ? s.ap.ssid + ' (' + s.ap.ip + ')' : '-';
 }
 
 function applyTelemetry(t) {

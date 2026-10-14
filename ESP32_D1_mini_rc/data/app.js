@@ -102,7 +102,7 @@ async function loadStatus() {
   const up = s.link.up && s.link.age < 2000;
   $('s-link').textContent = s.link.up ? (up ? '已連線' : '連線中') : '未連線';
   $('s-link').style.color = up ? 'var(--ok)' : 'var(--muted)';
-  $('net-dot').classList.toggle('on', s.wifi.connected || (s.ap && s.ap.active));
+  $('net-dot').classList.toggle('on', s.wifi.connected);
 
   $('s-wifi-c').textContent = s.wifi.connected ? '已連線' : '未連線';
   $('s-wifi-c').style.color = s.wifi.connected ? 'var(--ok)' : 'var(--muted)';
@@ -110,7 +110,8 @@ async function loadStatus() {
   $('s-wifi-ip').textContent = s.wifi.ip;
   $('s-wifi-rssi').textContent = s.wifi.connected ? s.wifi.rssi + ' dBm' : '-';
 
-  if (s.ap && s.ap.active) $('wifi-scan-state').textContent = 'SoftAP: ' + s.ap.ssid + ' (' + s.ap.ip + ')';
+  if (s.ap && s.ap.active) $('s-ap').textContent = s.ap.ssid + ' (' + s.ap.ip + ')';
+  else $('s-ap').textContent = '-';
 
   const st = $('joy-state');
   if (s.link.up && up) { $('joy-state').textContent = '已連線接收機'; }

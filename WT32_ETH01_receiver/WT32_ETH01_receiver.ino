@@ -22,9 +22,6 @@
 #include "kkbox.h"
 #include "web.h"
 
-static uint32_t bootMs = 0;
-static bool     apStarted = false;
-
 void setup() {
   /* 停用電壓不足偵測 (BOD): 避免 WiFi/RJ45(PHY) 瞬間電流造成 brownout reset */
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
@@ -58,9 +55,15 @@ void setup() {
     Serial.printf("[ETH] static ip=%s\n", gSet.ip.c_str());
   }
 
-  /* ---------- WiFi ---------- */
-  WiFi.mode(WIFI_STA);
+  /* ---------- WiFi: STA + AP 共存 ---------- */
+  /* 一律啟動 SoftAP, 確保任情況下都能進入設定頁; STA 則連線外部 WiFi */
+  WiFi.mode(WIFI_AP_STA);
   WiFi.setHostname("kkbox-receiver");
+  {
+    String ap = apSsid();
+    WiFi.softAP(ap.c_str(), AP_PASS);
+    Serial.printf("[AP] %s -> %s\n", ap.c_str(), WiFi.softAPIP().toString().c_str());
+  }
   if (gSet.ssid.length()) {
     WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
     Serial.printf("[WiFi] connecting to %s ...\n", gSet.ssid.c_str());
@@ -70,7 +73,6 @@ void setup() {
   kkBegin();
   webSetup();
 
-  bootMs = millis();
   Serial.println("[WEB] 伺服器已啟動 (port 80)");
 }
 
@@ -92,7 +94,7 @@ void loop() {
     }
   }
 
-  /* WiFi 斷線自動重連 */
+  /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA) */
   static uint32_t lastWifiTry = 0;
   if (gSet.ssid.length() && WiFi.status() != WL_CONNECTED) {
     if (millis() - lastWifiTry > 10000) {
@@ -100,16 +102,6 @@ void loop() {
       WiFi.disconnect();
       WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
     }
-  }
-
-  /* 無任何網路時啟動 SoftAP 供設定 */
-  if (!apStarted && gSet.ssid.length() == 0 && !ETH.linkUp() &&
-      millis() - bootMs > AP_FALLBACK_MS) {
-    apStarted = true;
-    WiFi.mode(WIFI_AP_STA);
-    String ssid = apSsid();
-    WiFi.softAP(ssid.c_str(), AP_PASS);
-    Serial.printf("[AP] %s -> %s\n", ssid.c_str(), WiFi.softAPIP().toString().c_str());
   }
 
   ws.cleanupClients();

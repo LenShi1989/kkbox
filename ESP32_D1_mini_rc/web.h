@@ -191,8 +191,8 @@ static void webSetup() {
     gSet.ssid  = arg(r, "ssid");
     gSet.wpass = arg(r, "pass");
     gPrefs.putString("ssid", gSet.ssid); gPrefs.putString("wpass", gSet.wpass);
-    WiFi.disconnect(); WiFi.mode(WIFI_STA);
-    WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
+    WiFi.mode(WIFI_AP_STA);      /* 保持 SoftAP 運作 */
+    WiFi.disconnect(); WiFi.begin(gSet.ssid.c_str(), gSet.wpass.c_str());
     sendOk(r);
   });
 

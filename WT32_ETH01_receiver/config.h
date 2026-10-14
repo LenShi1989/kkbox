@@ -34,10 +34,9 @@
 
 /* ---------- Web / AP ---------- */
 #define WEB_PORT        80
-/* SoftAP SSID = 前綴 + MAC 後 4 碼 (見 settings.h apSsid()) */
+/* SoftAP 一律啟動, 與 STA 共存; SSID = 前綴 + MAC 後 4 碼 (見 settings.h apSsid()) */
 #define AP_SSID_PREFIX  "KKBOX-Receiver-"
 #define AP_PASS         "12345678"    /* SoftAP 密碼, 至少 8 碼 */
-#define AP_FALLBACK_MS  20000UL       /* 開機後無任何連線則啟動 AP */
 #define SESSION_MAX     8
 
 /* ---------- 預設帳密 ---------- */
