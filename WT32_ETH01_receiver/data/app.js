@@ -31,6 +31,18 @@ function toast(msg, kind = 'ok') {
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
 }
 
+/* ---------- 主題切換 (明亮 / 暗黑 / 玻璃) ---------- */
+const THEME_KEY = 'kkbox-rx-theme';
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+  document.querySelectorAll('.theme-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.theme === t));
+}
+document.querySelectorAll('.theme-btn').forEach(b =>
+  b.addEventListener('click', () => setTheme(b.dataset.theme)));
+setTheme((function () { try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; } })());
+
 /* ---------- 登入 ---------- */
 function showLogin() {
   $('app').classList.add('hidden');

@@ -101,7 +101,7 @@ static String buildStatusJson() {
   wifi_mode_t m = WiFi.getMode();
   bool ap = (m == WIFI_AP || m == WIFI_AP_STA);
   s += ",\"ap\":{\"active\":" + String(ap ? 1 : 0);
-  s += ",\"ssid\":\"" AP_SSID "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
+  s += ",\"ssid\":\"" + apSsid() + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
 
   s += ",\"kk\":{\"lines\":" + String(gKkLines);
   s += ",\"age\":" + String(gLastTelemetryMs ? (millis() - gLastTelemetryMs) : 999999) + "}";
@@ -287,15 +287,14 @@ static void webSetup() {
       if (arg(r, "newuser").length()) gSet.user = arg(r, "user");
       if (arg(r, "newpass").length()) gSet.pass = arg(r, "pass");
       settingsSaveUser();
-      ElegantOTA.setAuth(gSet.user.c_str(), gSet.pass.c_str());
       sendOk(r);
     } else {
       sendErr(r, "wrong password", 401);
     }
   });
 
-  /* ---- OTA (ElegantOTA) ---- */
-  ElegantOTA.begin(&server, gSet.user.c_str(), gSet.pass.c_str());
+  /* ---- OTA (ElegantOTA, 無帳密驗證) ---- */
+  ElegantOTA.begin(&server);
 
   /* ---- 靜態檔案 (SPIFFS) ---- */
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");

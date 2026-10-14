@@ -26,6 +26,18 @@ function toast(msg, kind = 'ok') {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
 }
 
+/* ---------- 主題切換 (明亮 / 暗黑 / 玻璃) ---------- */
+const THEME_KEY = 'kkbox-rc-theme';
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+  document.querySelectorAll('.theme-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.theme === t));
+}
+document.querySelectorAll('.theme-btn').forEach(b =>
+  b.addEventListener('click', () => setTheme(b.dataset.theme)));
+setTheme((function () { try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; } })());
+
 /* ---------- 登入 ---------- */
 function showLogin() {
   $('app').classList.add('hidden');
@@ -82,7 +94,7 @@ async function loadStatus() {
   if (s.ap && s.ap.active) $('wifi-scan-state').textContent = 'SoftAP: ' + s.ap.ssid + ' (' + s.ap.ip + ')';
 
   const st = $('joy-state');
-  if (s.link.up && up) { joyState('已連線接收機'); }
+  if (s.link.up && up) { $('joy-state').textContent = '已連線接收機'; }
   else if (s.link.up) { $('joy-state').textContent = '連線中...'; }
   else $('joy-state').textContent = '未連線';
 }

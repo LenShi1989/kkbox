@@ -107,8 +107,9 @@ void loop() {
       millis() - bootMs > AP_FALLBACK_MS) {
     apStarted = true;
     WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(AP_SSID, AP_PASS);
-    Serial.printf("[AP] %s -> %s\n", AP_SSID, WiFi.softAPIP().toString().c_str());
+    String ssid = apSsid();
+    WiFi.softAP(ssid.c_str(), AP_PASS);
+    Serial.printf("[AP] %s -> %s\n", ssid.c_str(), WiFi.softAPIP().toString().c_str());
   }
 
   ws.cleanupClients();

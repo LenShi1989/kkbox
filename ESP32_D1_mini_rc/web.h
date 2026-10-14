@@ -81,7 +81,7 @@ static String buildStatusJson() {
   wifi_mode_t m = WiFi.getMode();
   bool ap = (m == WIFI_AP || m == WIFI_AP_STA);
   s += ",\"ap\":{\"active\":" + String(ap ? 1 : 0);
-  s += ",\"ssid\":\"" AP_SSID "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
+  s += ",\"ssid\":\"" + apSsid() + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
 
   s += ",\"link\":{\"up\":" + String(gLinkUp ? 1 : 0);
   s += ",\"host\":\"" + gSet.rxHost + "\",\"port\":" + String(gSet.rxPort);
@@ -228,11 +228,10 @@ static void webSetup() {
     String p = arg(r, "pass"); if (p.length()) gSet.pass = p;
     gPrefs.putString("user", gSet.user);
     gPrefs.putString("pass", gSet.pass);
-    ElegantOTA.setAuth(gSet.user.c_str(), gSet.pass.c_str());
     sendOk(r);
   });
 
-  ElegantOTA.begin(&server, gSet.user.c_str(), gSet.pass.c_str());
+  ElegantOTA.begin(&server);
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
 

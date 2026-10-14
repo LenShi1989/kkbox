@@ -229,9 +229,9 @@ Y   0.8        1460
 
 ### 首次使用流程
 
-1. 接收機接上 RJ45（或開機後無網路 20 秒會啟動 SoftAP `KKBOX-Receiver-Setup` / `kkbox1234`），瀏覽器開啟其 IP，以 `admin`/`kkbox` 登入。
+1. 接收機接上 RJ45（或開機後無網路 20 秒會啟動 SoftAP `KKBOX-Receiver-<MAC後4碼>` / `12345678`），瀏覽器開啟其 IP，以 `admin`/`admin` 登入。
 2. 於「使用者設定」複製 **裝置連結 Token**。
-3. 遙控器開機（無網路 15 秒會啟動 SoftAP `KKBOX-RC-Setup`），登入後於「網路設定」填入 **接收機 IP 與 Token**，即自動建立 WebSocket 連線。
+3. 遙控器開機（無網路 15 秒會啟動 SoftAP `KKBOX-RC-<MAC後4碼>` / `12345678`），登入後於「網路設定」填入 **接收機 IP 與 Token**，即自動建立 WebSocket 連線。
 4. 進入「模擬搖桿」即可解鎖、控制油門與 Roll/Pitch/Yaw。
 
 ### WebSocket 協定
@@ -315,13 +315,13 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 
 - 序列埠監控 **115200 8N1** 可看開機 log（會顯示 WiFi/IP/SPIFFS 狀態）。
 - **接收機**：接 RJ45 會以 DHCP 取得 IP；若 20 秒內沒有任何網路，會啟動 SoftAP
-  `KKBOX-Receiver-Setup` / 密碼 `kkbox1234`。瀏覽器開啟其 IP，登入 `admin / kkbox`。
-- **遙控器**：無網路 15 秒後啟動 SoftAP `KKBOX-RC-Setup` / 密碼 `kkbox1234`，並於 OLED 顯示狀態。
+  `KKBOX-Receiver-<MAC後4碼>` / 密碼 `12345678`。瀏覽器開啟其 IP，登入 `admin / admin`。
+- **遙控器**：無網路 15 秒後啟動 SoftAP `KKBOX-RC-<MAC後4碼>` / 密碼 `12345678`，並於 OLED 顯示狀態。
 - 首次設定：接收機「使用者設定」取得 **裝置連結 Token**；遙控器「網路設定」填入接收機 **IP + Token**。
 
 ### 5. 之後的更新：OTA
 
-- 瀏覽器開啟 `http://<裝置IP>/update`，以 `admin / kkbox` 驗證後上傳對應專案的 `.bin`
+- 瀏覽器開啟 `http://<裝置IP>/update`，直接上傳對應專案的 `.bin`（**無需帳密驗證**）
   （Arduino IDE：`草稿碼 → 匯出已編譯二進位檔`）。
 - OTA **只更新程式**，不會更新 SPIFFS 網頁；改網頁仍需回到步驟 3。
 

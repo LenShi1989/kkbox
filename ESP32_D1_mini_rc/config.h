@@ -28,14 +28,15 @@
 
 /* ---------- Web / AP ---------- */
 #define WEB_PORT       80
-#define AP_SSID        "KKBOX-RC-Setup"
-#define AP_PASS        "kkbox1234"
+/* SoftAP SSID = 前綴 + MAC 後 4 碼 (見 settings.h apSsid()) */
+#define AP_SSID_PREFIX "KKBOX-RC-"
+#define AP_PASS        "12345678"
 #define AP_FALLBACK_MS 15000UL
 #define SESSION_MAX    8
 
 /* ---------- 預設帳密 ---------- */
 #define DEF_USER  "admin"
-#define DEF_PASS  "kkbox"
+#define DEF_PASS  "admin"
 
 /* ---------- 預設接收機連線 ---------- */
 #define DEF_RX_PORT  80

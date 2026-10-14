@@ -32,6 +32,11 @@
       <a data-page="ota">OTA 更新</a>
       <a data-page="user">使用者設定</a>
     </nav>
+    <div class="theme-switch" id="theme-switch" role="group" aria-label="主題切換">
+      <button type="button" class="theme-btn" data-theme="light">明亮</button>
+      <button type="button" class="theme-btn" data-theme="dark">暗黑</button>
+      <button type="button" class="theme-btn" data-theme="glass">玻璃</button>
+    </div>
     <button id="logout" class="ghost">登出</button>
   </aside>
 
@@ -39,30 +44,38 @@
     <!-- 系統狀態 -->
     <section id="page-status" class="page active">
       <h2>系統狀態</h2>
-      <div class="grid">
-        <div class="card"><div class="k">韌體</div><div class="v" id="s-fw">-</div></div>
-        <div class="card"><div class="k">運作時間</div><div class="v" id="s-uptime">-</div></div>
-        <div class="card"><div class="k">可用記憶體</div><div class="v" id="s-heap">-</div></div>
-        <div class="card"><div class="k">接收機連線</div><div class="v" id="s-link">-</div></div>
-      </div>
+
+      <h3>系統資訊</h3>
+      <table class="tbl">
+        <tbody>
+          <tr><th>韌體</th><td id="s-fw">-</td></tr>
+          <tr><th>運作時間</th><td id="s-uptime">-</td></tr>
+          <tr><th>可用記憶體</th><td id="s-heap">-</td></tr>
+          <tr><th>接收機連線</th><td id="s-link">-</td></tr>
+        </tbody>
+      </table>
 
       <h3>無線網路 (WiFi)</h3>
-      <div class="grid">
-        <div class="card"><div class="k">連線</div><div class="v" id="s-wifi-c">-</div></div>
-        <div class="card"><div class="k">SSID</div><div class="v" id="s-wifi-ssid">-</div></div>
-        <div class="card"><div class="k">IP</div><div class="v" id="s-wifi-ip">-</div></div>
-        <div class="card"><div class="k">訊號</div><div class="v" id="s-wifi-rssi">-</div></div>
-      </div>
+      <table class="tbl">
+        <tbody>
+          <tr><th>連線</th><td id="s-wifi-c">-</td></tr>
+          <tr><th>SSID</th><td id="s-wifi-ssid">-</td></tr>
+          <tr><th>IP</th><td id="s-wifi-ip">-</td></tr>
+          <tr><th>訊號</th><td id="s-wifi-rssi">-</td></tr>
+        </tbody>
+      </table>
 
       <h3>飛控遙測 (即時)</h3>
-      <div class="grid">
-        <div class="card"><div class="k">解鎖</div><div class="v" id="t-armed">-</div></div>
-        <div class="card"><div class="k">油門</div><div class="v" id="t-thr">-</div></div>
-        <div class="card"><div class="k">陀螺 Roll</div><div class="v" id="t-gr">-</div></div>
-        <div class="card"><div class="k">陀螺 Pitch</div><div class="v" id="t-gp">-</div></div>
-        <div class="card"><div class="k">陀螺 Yaw</div><div class="v" id="t-gy">-</div></div>
-        <div class="card"><div class="k">馬達</div><div class="v small" id="t-motor">-</div></div>
-      </div>
+      <table class="tbl">
+        <tbody>
+          <tr><th>解鎖</th><td id="t-armed">-</td></tr>
+          <tr><th>油門</th><td id="t-thr">-</td></tr>
+          <tr><th>陀螺 Roll</th><td id="t-gr">-</td></tr>
+          <tr><th>陀螺 Pitch</th><td id="t-gp">-</td></tr>
+          <tr><th>陀螺 Yaw</th><td id="t-gy">-</td></tr>
+          <tr><th>馬達</th><td id="t-motor">-</td></tr>
+        </tbody>
+      </table>
 
       <h3>Flash (SPIFFS)</h3>
       <div class="card">
@@ -150,7 +163,6 @@
       <div class="card">
         <p class="muted">透過瀏覽器上傳新的韌體 (.bin)。上傳完成後裝置會自動重新啟動。</p>
         <a class="btn" href="/update" target="_blank" rel="noopener">開啟 OTA 上傳頁面</a>
-        <p class="muted small">OTA 頁面使用裝置帳號密碼做 HTTP 驗證。</p>
       </div>
     </section>
 

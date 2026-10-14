@@ -2,8 +2,18 @@
 #define RECEIVER_SETTINGS_H
 
 #include <Arduino.h>
+#include <WiFi.h>
 #include <Preferences.h>
 #include "config.h"
+
+/* SoftAP SSID = 前綴 + MAC 後 4 碼 (例: KKBOX-Receiver-A1B2) */
+static inline String apSsid() {
+  uint8_t mac[6] = {0};
+  WiFi.macAddress(mac);
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%s%02X%02X", AP_SSID_PREFIX, mac[4], mac[5]);
+  return String(buf);
+}
 
 /* 以 NVS (Preferences) 儲存設定 */
 struct Settings {
