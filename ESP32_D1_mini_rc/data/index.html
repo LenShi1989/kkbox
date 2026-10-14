@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KKBOX 遙控器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login" class="login-overlay hidden">
+  <form class="login-box" id="login-form">
+    <h1>KKBOX 遙控器</h1>
+    <p class="muted">請登入以繼續</p>
+    <input id="lg-user" placeholder="帳號" autocomplete="username" autofocus>
+    <input id="lg-pass" type="password" placeholder="密碼" autocomplete="current-password">
+    <button type="submit">登入</button>
+    <div id="lg-err" class="err"></div>
+  </form>
+</div>
+
+<div id="app" class="layout hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="title"><span class="dot" id="net-dot"></span> KKBOX</div>
+      <div class="sub">ESP32 D1 mini 遙控器</div>
+    </div>
+    <nav id="nav">
+      <a data-page="status"   class="active">系統狀態</a>
+      <a data-page="network">網路設定</a>
+      <a data-page="joy">模擬搖桿</a>
+      <a data-page="ota">OTA 更新</a>
+      <a data-page="user">使用者設定</a>
+    </nav>
+    <button id="logout" class="ghost">登出</button>
+  </aside>
+
+  <main>
+    <!-- 系統狀態 -->
+    <section id="page-status" class="page active">
+      <h2>系統狀態</h2>
+      <div class="grid">
+        <div class="card"><div class="k">韌體</div><div class="v" id="s-fw">-</div></div>
+        <div class="card"><div class="k">運作時間</div><div class="v" id="s-uptime">-</div></div>
+        <div class="card"><div class="k">可用記憶體</div><div class="v" id="s-heap">-</div></div>
+        <div class="card"><div class="k">接收機連線</div><div class="v" id="s-link">-</div></div>
+      </div>
+
+      <h3>無線網路 (WiFi)</h3>
+      <div class="grid">
+        <div class="card"><div class="k">連線</div><div class="v" id="s-wifi-c">-</div></div>
+        <div class="card"><div class="k">SSID</div><div class="v" id="s-wifi-ssid">-</div></div>
+        <div class="card"><div class="k">IP</div><div class="v" id="s-wifi-ip">-</div></div>
+        <div class="card"><div class="k">訊號</div><div class="v" id="s-wifi-rssi">-</div></div>
+      </div>
+
+      <h3>飛控遙測 (即時)</h3>
+      <div class="grid">
+        <div class="card"><div class="k">解鎖</div><div class="v" id="t-armed">-</div></div>
+        <div class="card"><div class="k">油門</div><div class="v" id="t-thr">-</div></div>
+        <div class="card"><div class="k">陀螺 Roll</div><div class="v" id="t-gr">-</div></div>
+        <div class="card"><div class="k">陀螺 Pitch</div><div class="v" id="t-gp">-</div></div>
+        <div class="card"><div class="k">陀螺 Yaw</div><div class="v" id="t-gy">-</div></div>
+        <div class="card"><div class="k">馬達</div><div class="v small" id="t-motor">-</div></div>
+      </div>
+
+      <h3>Flash (SPIFFS)</h3>
+      <div class="card">
+        <div class="row"><span class="k">容量</span><span id="fs-usage">-</span></div>
+        <div class="bar"><div id="fs-bar"></div></div>
+        <table class="tbl" id="fs-files"><thead><tr><th>檔案</th><th>大小</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- 網路設定 -->
+    <section id="page-network" class="page">
+      <h2>網路設定</h2>
+
+      <h3>WiFi 設定</h3>
+      <div class="card">
+        <div class="row">
+          <button id="wifi-scan" class="ghost">掃描 SSID</button>
+          <span class="muted" id="wifi-scan-state"></span>
+        </div>
+        <select id="wifi-list" size="5" class="listbox"></select>
+        <label>SSID <input id="wifi-ssid" placeholder="WiFi 名稱"></label>
+        <label>密碼 <input id="wifi-pass" type="password" placeholder="WiFi 密碼"></label>
+        <div class="row">
+          <button id="wifi-save">連線並儲存</button>
+          <button id="wifi-clear" class="danger">清除連線設定</button>
+        </div>
+      </div>
+
+      <h3>接收機連線設定</h3>
+      <div class="card">
+        <p class="muted">填入 WT32-ETH01 接收機的 IP 與其「裝置連結 Token」。</p>
+        <label>接收機 IP <input id="lk-host" placeholder="192.168.1.50"></label>
+        <label>連接埠 <input id="lk-port" type="number" value="80"></label>
+        <label>Token <input id="lk-token" placeholder="接收機使用者設定頁的 Token"></label>
+        <button id="lk-save">儲存並重新連線</button>
+      </div>
+    </section>
+
+    <!-- 模擬搖桿 -->
+    <section id="page-joy" class="page">
+      <h2>模擬搖桿</h2>
+      <div class="joy-wrap">
+        <div class="pad-box">
+          <div class="pad" id="pad">
+            <div class="pad-cross-h"></div>
+            <div class="pad-cross-v"></div>
+            <div class="knob" id="knob"></div>
+          </div>
+          <div class="muted small">拖曳控制 Roll / Pitch (角速率 deg/s)</div>
+          <div class="row">
+            <span>Roll <b id="joy-roll">0</b></span>
+            <span>Pitch <b id="joy-pitch">0</b></span>
+          </div>
+        </div>
+
+        <div class="joy-ctrl">
+          <label>油門 (1000~2000): <b id="joy-thr-v">1000</b>
+            <input type="range" id="joy-thr" min="1000" max="2000" value="1000" step="10">
+          </label>
+          <label>Yaw (deg/s): <b id="joy-yaw-v">0</b>
+            <input type="range" id="joy-yaw" min="-200" max="200" value="0" step="5">
+          </label>
+          <div class="row">
+            <button id="btn-arm">解鎖 ARM</button>
+            <button id="btn-disarm" class="danger">上鎖 DISARM</button>
+          </div>
+          <div class="row">
+            <button id="btn-cal" class="ghost">陀螺校正</button>
+            <button id="btn-reset" class="ghost">歸零</button>
+          </div>
+          <div class="row">
+            <span class="muted">LED</span>
+            <button data-led="on" class="ghost">亮</button>
+            <button data-led="off" class="ghost">滅</button>
+            <button data-led="blink" class="ghost">閃</button>
+          </div>
+          <div class="muted small">狀態：<span id="joy-state">未連線</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OTA -->
+    <section id="page-ota" class="page">
+      <h2>OTA 更新</h2>
+      <div class="card">
+        <p class="muted">透過瀏覽器上傳新的韌體 (.bin)。上傳完成後裝置會自動重新啟動。</p>
+        <a class="btn" href="/update" target="_blank" rel="noopener">開啟 OTA 上傳頁面</a>
+        <p class="muted small">OTA 頁面使用裝置帳號密碼做 HTTP 驗證。</p>
+      </div>
+    </section>
+
+    <!-- 使用者設定 -->
+    <section id="page-user" class="page">
+      <h2>使用者設定</h2>
+      <div class="card">
+        <h3>變更帳號密碼</h3>
+        <label>帳號 <input id="u-user"></label>
+        <label>新密碼 <input id="u-pass" type="password" placeholder="留空表示不變更"></label>
+        <label>目前密碼 <input id="u-cur" type="password" placeholder="確認用"></label>
+        <button id="u-save">儲存</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="app.js"></script>
+</body>
+</html>

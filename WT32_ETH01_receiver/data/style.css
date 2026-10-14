@@ -1,0 +1,95 @@
+:root{
+  --bg:#0f1216; --panel:#181d24; --panel2:#20262f; --line:#2b3340;
+  --fg:#e6ebf2; --muted:#8b97a6; --accent:#37c2ff; --accent2:#1f8fbf;
+  --ok:#3ddc84; --warn:#ffcc4d; --err:#ff5b5b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg);color:var(--fg);
+  font-family:system-ui,"Segoe UI","Microsoft JhengHei",sans-serif;font-size:14px;
+}
+.hidden{display:none !important}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+h2{margin:0 0 14px;font-weight:600}
+h3{margin:22px 0 10px;font-weight:600;color:#cdd6e0}
+a{color:var(--accent);text-decoration:none}
+
+/* layout */
+.layout{display:flex;min-height:100vh}
+.sidebar{
+  width:220px;flex:0 0 220px;background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:18px 0;
+}
+.brand{padding:0 18px 18px;border-bottom:1px solid var(--line)}
+.brand .title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.brand .sub{color:var(--muted);font-size:12px;margin-top:4px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--err);display:inline-block;box-shadow:0 0 8px currentColor}
+.dot.on{background:var(--ok)}
+nav{display:flex;flex-direction:column;padding:12px 10px;gap:4px;flex:1}
+nav a{padding:10px 14px;border-radius:8px;color:var(--fg);cursor:pointer;display:block}
+nav a:hover{background:var(--panel2)}
+nav a.active{background:var(--accent2);color:#fff}
+.ghost{margin:0 14px;padding:9px;background:transparent;border:1px solid var(--line);color:var(--fg);border-radius:8px;cursor:pointer}
+.ghost:hover{border-color:var(--accent)}
+
+main{flex:1;padding:26px 30px;overflow:auto;max-width:1100px}
+.page{display:none}
+.page.active{display:block}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card .k{color:var(--muted);font-size:12px}
+.card .v{font-size:18px;font-weight:600;margin-top:6px;word-break:break-all}
+.card .v.small{font-size:14px}
+.card .row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.card label{display:block;margin:10px 0}
+.card label.inline{display:inline-flex;gap:6px;margin-right:18px}
+
+input,select{
+  width:100%;padding:9px 11px;margin-top:5px;background:var(--bg);color:var(--fg);
+  border:1px solid var(--line);border-radius:8px;font:inherit;
+}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+.listbox{margin:10px 0}
+label{color:var(--muted)}
+
+button{
+  padding:10px 16px;margin-top:8px;background:var(--accent2);color:#fff;border:none;
+  border-radius:8px;font:inherit;font-weight:600;cursor:pointer;
+}
+button:hover{background:var(--accent)}
+button.danger{background:#7a2323}
+button.danger:hover{background:var(--err)}
+.btn{display:inline-block;margin-top:8px;padding:10px 16px;background:var(--accent2);color:#fff;border-radius:8px;font-weight:600}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;margin-top:12px}
+.tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl th{color:var(--muted);font-weight:500;font-size:12px}
+.tbl input{margin:0}
+
+/* progress bar */
+.bar{height:8px;background:var(--bg);border-radius:6px;overflow:hidden;margin:10px 0}
+.bar>div{height:100%;width:0;background:var(--accent);transition:width .3s}
+
+/* login */
+.login-overlay{position:fixed;inset:0;background:rgba(8,10,13,.92);display:flex;align-items:center;justify-content:center;z-index:50}
+.login-box{width:320px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px}
+.login-box h1{margin:0 0 4px;font-size:20px}
+.login-box input{margin-top:12px}
+.login-box button{width:100%;margin-top:16px}
+.err{color:var(--err);min-height:18px;margin-top:10px;font-size:13px}
+
+/* toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel2);
+  border:1px solid var(--line);padding:11px 20px;border-radius:10px;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast.ok{border-color:var(--ok)}
+.toast.err{border-color:var(--err)}
+
+.bar{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:10px 0}
+.token{background:var(--bg);padding:8px 12px;border-radius:8px;border:1px solid var(--line);font-family:ui-monospace,Consolas,monospace}
+.btn{display:inline-block}
+.tbl th,.tbl td{padding:8px 10px}
