@@ -21,7 +21,7 @@
 </div>
 
 <div id="app" class="layout hidden">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="title"><span class="dot" id="net-dot"></span> KKBOX</div>
       <div class="sub">WT32-ETH01 接收機</div>
@@ -40,8 +40,16 @@
     </div>
     <button id="logout" class="ghost">登出</button>
   </aside>
+  <div class="backdrop" id="backdrop"></div>
 
   <main>
+    <div class="topbar">
+      <button type="button" class="hamburger" id="menu-toggle" aria-label="選單" aria-controls="sidebar" aria-expanded="true">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title">KKBOX 接收機</div>
+    </div>
+
     <!-- 系統狀態 -->
     <section id="page-status" class="page active">
       <h2>系統狀態</h2>

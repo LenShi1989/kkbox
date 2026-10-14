@@ -43,6 +43,25 @@ document.querySelectorAll('.theme-btn').forEach(b =>
   b.addEventListener('click', () => setTheme(b.dataset.theme)));
 setTheme((function () { try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { return 'dark'; } })());
 
+/* ---------- Sidebar (漢堡選單) ---------- */
+const menuBtn = $('menu-toggle');
+const backdrop = $('backdrop');
+const isDesktop = () => window.matchMedia('(min-width:1025px)').matches;
+let wasDesktop = isDesktop();
+function setNav(open) {
+  document.body.classList.toggle('nav-open', open);
+  menuBtn.setAttribute('aria-expanded', String(isDesktop() ? !open : open));
+}
+menuBtn.addEventListener('click', () =>
+  setNav(!document.body.classList.contains('nav-open')));
+backdrop.addEventListener('click', () => setNav(false));
+$('nav').addEventListener('click', () => { if (!isDesktop()) setNav(false); });
+window.addEventListener('resize', () => {
+  const d = isDesktop();
+  if (d !== wasDesktop) { wasDesktop = d; setNav(false); }
+});
+setNav(false);
+
 /* ---------- 登入 ---------- */
 function showLogin() {
   $('app').classList.add('hidden');
