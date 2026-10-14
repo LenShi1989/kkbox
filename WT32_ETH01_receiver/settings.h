@@ -4,12 +4,14 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Preferences.h>
+#include <esp_mac.h>
 #include "config.h"
 
 /* SoftAP SSID = 前綴 + MAC 後 4 碼 (例: KKBOX-Receiver-A1B2) */
 static inline String apSsid() {
   uint8_t mac[6] = {0};
-  WiFi.macAddress(mac);
+  /* 直接讀 eFuse 基礎 MAC, 避免 WiFi 驅動尚未啟動時 macAddress() 回傳 0 */
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
   char buf[40];
   snprintf(buf, sizeof(buf), "%s%02X%02X", AP_SSID_PREFIX, mac[4], mac[5]);
   return String(buf);
