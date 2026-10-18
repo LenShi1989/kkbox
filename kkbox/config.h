@@ -6,11 +6,14 @@
 #define FW_NAME    "KKBOX"
 #define FW_VERSION "1.0.0"
 
-/* ---------- RS232 (硬體 UART) ----------
- * 依據 docs/KKBOX接腳定義: RS232-RX = PD0 = GPIO16 = Arduino D0 (RXD)
- *                          RS232-TX = PD1 = GPIO17 = Arduino D1 (TXD)
- * 因此直接使用 Arduino 硬體 Serial (D0 / D1)。
+/* ---------- RS232 (軟體序列 SoftwareSerial) ----------
+ * 接腳重新定義: RS232-TX = PD1 = GPIO17 = Arduino D1
+ *               RS232-RX = PD2 = GPIO18 = Arduino D2
+ * 硬體 UART 停用 (D0/RXD 釋出); 注意 TX 與硬體 UART TXD 同腳 (PD1),
+ * 故不可再 Serial.begin(), 以免兩者衝突。
  */
+#define RS232_RX_PIN 2   /* GPIO18 = PD2 = D2 */
+#define RS232_TX_PIN 1   /* GPIO17 = PD1 = D1 */
 #define SERIAL_BAUD 115200
 
 /* ---------- 板載 LED1 ----------

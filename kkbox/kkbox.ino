@@ -7,7 +7,7 @@
  * - Arduino IDE (.ino)
  * - PID 演算法 (三軸 rate PID)
  * - 自主平衡 (陀螺儀回授阻尼, 抵抗機體轉動)
- * - RS232 TX/RX (硬體 UART) 以 JSON 傳輸: 控制命令 + 三軸陀螺儀資料
+ * - RS232 TX/RX (軟體 SoftwareSerial, TX=D1/GPIO17, RX=D2/GPIO18) 以 JSON 傳輸: 控制命令 + 三軸陀螺儀資料
  * - 板載 LED1 遠端遙控測試 (on / off / blink)
  *
  * 序列命令請見 README.md。所有命令以 '\n' 結尾。
@@ -15,6 +15,7 @@
  */
 
 #include <Servo.h>
+#include <SoftwareSerial.h>
 #include "config.h"
 #include "pid.h"
 #include "gyro.h"
@@ -27,6 +28,7 @@ static const uint8_t MOTOR_PINS[8] = {
 };
 
 Servo esc[MOTOR_COUNT];
+SoftwareSerial rs232(RS232_RX_PIN, RS232_TX_PIN);   /* 參數順序: RX, TX */
 Gyro  gyro;
 PID   pidRoll, pidPitch, pidYaw;
 
@@ -53,9 +55,9 @@ uint8_t lineLen = 0;
 
 /* ------------------------------------------------------------------ */
 static void ackCmd(const char* what) {
-  Serial.print(F("{\"ack\":\""));
-  Serial.print(what);
-  Serial.println(F("\"}"));
+  rs232.print(F("{\"ack\":\""));
+  rs232.print(what);
+  rs232.println(F("\"}"));
 }
 
 /* 固定頻率控制回路: 讀陀螺 -> PID -> 混控 -> 輸出 ESC */
@@ -86,7 +88,7 @@ static void controlStep(float dt) {
 
   if (armed && (millis() - lastCmdMs > FAILSAFE_MS)) {
     armed = false;
-    Serial.println(F("{\"evt\":\"failsafe\"}"));
+    rs232.println(F("{\"evt\":\"failsafe\"}"));
   }
 }
 
@@ -112,25 +114,25 @@ static void sendTelemetry() {
   if (now - lastTelMs < telIntervalMs) return;
   lastTelMs = now;
 
-  Serial.print(F("{\"t\":"));               Serial.print(now);
-  Serial.print(F(",\"armed\":"));           Serial.print(armed);
-  Serial.print(F(",\"led\":"));             Serial.print(ledValue);
+  rs232.print(F("{\"t\":"));               rs232.print(now);
+  rs232.print(F(",\"armed\":"));           rs232.print(armed);
+  rs232.print(F(",\"led\":"));             rs232.print(ledValue);
 
-  Serial.print(F(",\"gyro\":{\"roll\":"));  Serial.print(gyroNow.roll, 2);
-  Serial.print(F(",\"pitch\":"));           Serial.print(gyroNow.pitch, 2);
-  Serial.print(F(",\"yaw\":"));             Serial.print(gyroNow.yaw, 2);
+  rs232.print(F(",\"gyro\":{\"roll\":"));  rs232.print(gyroNow.roll, 2);
+  rs232.print(F(",\"pitch\":"));           rs232.print(gyroNow.pitch, 2);
+  rs232.print(F(",\"yaw\":"));             rs232.print(gyroNow.yaw, 2);
 
-  Serial.print(F("},\"set\":{\"roll\":"));  Serial.print(setRoll, 2);
-  Serial.print(F(",\"pitch\":"));           Serial.print(setPitch, 2);
-  Serial.print(F(",\"yaw\":"));             Serial.print(setYaw, 2);
-  Serial.print(F(",\"thr\":"));             Serial.print(throttleUs);
+  rs232.print(F("},\"set\":{\"roll\":"));  rs232.print(setRoll, 2);
+  rs232.print(F(",\"pitch\":"));           rs232.print(setPitch, 2);
+  rs232.print(F(",\"yaw\":"));             rs232.print(setYaw, 2);
+  rs232.print(F(",\"thr\":"));             rs232.print(throttleUs);
 
-  Serial.print(F("},\"motor\":["));
+  rs232.print(F("},\"motor\":["));
   for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
-    if (i) Serial.print(',');
-    Serial.print((int)(motorUs[i] + 0.5f));
+    if (i) rs232.print(',');
+    rs232.print((int)(motorUs[i] + 0.5f));
   }
-  Serial.println(F("]}"));
+  rs232.println(F("]}"));
 }
 
 static void applyPid(const char* axis, float kp, float ki, float kd) {
@@ -159,9 +161,9 @@ static void handleCommand(const char* s) {
     } else {
       ledMode = jInt(s, "value", 0) ? 1 : 0;
     }
-    Serial.print(F("{\"ack\":\"led\",\"mode\":"));
-    Serial.print(ledMode);
-    Serial.println(F("}"));
+    rs232.print(F("{\"ack\":\"led\",\"mode\":"));
+    rs232.print(ledMode);
+    rs232.println(F("}"));
 
   } else if (!strcmp(cmd, "arm")) {
     throttleUs = ESC_MIN;
@@ -203,22 +205,22 @@ static void handleCommand(const char* s) {
     ackCmd("telemetry");
 
   } else if (!strcmp(cmd, "status")) {
-    Serial.print(F("{\"ack\":\"status\",\"fw\":\"" FW_NAME "\",\"ver\":\"" FW_VERSION "\",\"armed\":"));
-    Serial.print(armed);
-    Serial.print(F(",\"thr\":"));
-    Serial.print(throttleUs);
-    Serial.print(F(",\"tel\":"));
-    Serial.print(telIntervalMs);
-    Serial.println(F("}"));
+    rs232.print(F("{\"ack\":\"status\",\"fw\":\"" FW_NAME "\",\"ver\":\"" FW_VERSION "\",\"armed\":"));
+    rs232.print(armed);
+    rs232.print(F(",\"thr\":"));
+    rs232.print(throttleUs);
+    rs232.print(F(",\"tel\":"));
+    rs232.print(telIntervalMs);
+    rs232.println(F("}"));
 
   } else {
-    Serial.println(F("{\"err\":\"unknown cmd\"}"));
+    rs232.println(F("{\"err\":\"unknown cmd\"}"));
   }
 }
 
 static void readSerial() {
-  while (Serial.available()) {
-    char c = (char)Serial.read();
+  while (rs232.available()) {
+    char c = (char)rs232.read();
     if (c == '\n' || c == '\r') {
       if (lineLen > 0) {
         lineBuf[lineLen] = 0;
@@ -234,7 +236,7 @@ static void readSerial() {
 }
 
 void setup() {
-  Serial.begin(SERIAL_BAUD);
+  rs232.begin(SERIAL_BAUD);   /* 硬體 Serial 不啟用: TXD(PD1) 與 rs232 共用同一腳 */
   ledInit();
 
   for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
@@ -260,8 +262,8 @@ void setup() {
   lastCmdMs  = millis();
   lastTelMs  = millis();
 
-  Serial.print(F("{\"evt\":\"ready\",\"fw\":\"" FW_NAME "\",\"ver\":\"" FW_VERSION "\"}"));
-  Serial.println();
+  rs232.print(F("{\"evt\":\"ready\",\"fw\":\"" FW_NAME "\",\"ver\":\"" FW_VERSION "\"}"));
+  rs232.println();
 }
 
 void loop() {
