@@ -2,3 +2,4 @@
 build/
 spiffs.bin
 *.ino.*.bin
+*.hex
