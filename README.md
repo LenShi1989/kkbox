@@ -354,3 +354,34 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 2. 先加 `kp` 直到開始快速震盪，再退回一點。
 3. 加 `kd` 抑制震盪；yaw 軸可少量 `ki` 做定角速率。
 4. `GYRO_DEG_PER_COUNT` 依實際陀螺儀靈敏度校正，會影響 PID 增益尺度。
+
+# USB ISP MX-U2BLSP-V5.00
+
+裝置管理員:
+
+USB裝置:
+`USB\VID_03EB&PID_C8B4`
+
+燒錄軟體:
+`https://github.com/gen-so/PROGISP-V1.72`
+
+## Arduino IDE
+
+- 匯出已編譯的二進位檔
+  - Blink.ino.eightanaloginputs.hex
+
+## PROGISP 燒錄軟體
+
+- 狀態 A：PRG ISP 可用
+  - 初步成功
+  - PRG ISP 狀態區塊呈現可用狀態，表示軟體可能已找到相容的燒錄器。
+
+- 狀態 B：PRG ISP 灰色或不可用
+  - 尚未確認
+  - 可能是燒錄器未連接、通訊協定不相容，或軟體沒有正確存取 USB 裝置。
+
+- Load flash
+  - 選擇燒錄檔`Blink.ino.eightanaloginputs.hex`
+
+- Auto
+  - 開始燒錄
