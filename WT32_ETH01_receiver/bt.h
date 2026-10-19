@@ -54,7 +54,10 @@ class BtCmdCB : public NimBLECharacteristicCallbacks {
 };
 
 static inline void btBegin() {
-  NimBLEDevice::init(btName().c_str());
+  if (!NimBLEDevice::init(btName().c_str())) {
+    Serial.println("[BLE] init 失敗 (記憶體不足?), 藍牙停用");
+    return;
+  }
   NimBLEDevice::setPowerLevel(ESP_PWR_LVL_P9);
   NimBLEDevice::setMTU(517);              /* 允許較長遙測 / 命令 */
   gBtServer = NimBLEDevice::createServer();
@@ -72,8 +75,8 @@ static inline void btBegin() {
   adv->enableScanResponse(true);
   adv->setName(btName().c_str());
   adv->addServiceUUID(BLE_SVC_UUID);
-  adv->start();
-  Serial.printf("[BLE] 伺服器啟動: %s\n", btName().c_str());
+  if (adv->start()) Serial.printf("[BLE] 廣播已啟動: %s\n", btName().c_str());
+  else              Serial.println("[BLE] 廣播啟動失敗");
 }
 
 /* 傳送一行 JSON (遙測 / ack) 給已連線的 RC */
