@@ -6,7 +6,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "config.h"
+#include "settings.h"
 #include "telem.h"
+#include "bt.h"
 
 static Adafruit_SSD1306 oled(OLED_W, OLED_H, &Wire, -1);
 static bool gOledOk = false;
@@ -30,11 +32,13 @@ static inline void oledShow() {
   oled.setTextSize(1);
   oled.setTextColor(SSD1306_WHITE);
 
-  /* 第 0 行: 標題 + 連線狀態 */
+  /* 第 0 行: 標題 + 連線狀態 (依通道顯示 WiFi / 藍牙) */
+  bool up = (gSet.channel == 1) ? gBtUp : gLinkUp;
   oled.setCursor(0, 0);
   oled.print("KKBOX RC");
-  oled.setCursor(80, 0);
-  oled.print(gLinkUp ? "LINK" : "NO LINK");
+  oled.setCursor(72, 0);
+  if (gSet.channel == 1) oled.print(up ? "BT LINK" : "BT ----");
+  else                   oled.print(gLinkUp ? "LINK" : "NO LINK");
 
   if (!gTelem.valid) {
     oled.setCursor(0, 24);

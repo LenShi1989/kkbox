@@ -17,6 +17,15 @@ static inline String apSsid() {
   return String(buf);
 }
 
+/* BLE 廣播名稱 = 前綴 + MAC 後 4 碼 (例: KKBOX-RX-A1B2) */
+static inline String btName() {
+  uint8_t mac[6] = {0};
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%s%02X%02X", BT_NAME_PREFIX, mac[4], mac[5]);
+  return String(buf);
+}
+
 /* 以 NVS (Preferences) 儲存設定 */
 struct Settings {
   /* 登入帳密 */

@@ -5,6 +5,7 @@
  * 名稱 (Name):    WT32-ETH01 Receiver
  * ---------------------------------------------------------------
  * - 內建 LAN8720A RJ45 有線網路 + WiFi 無線網路 (可同時)
+ * - 藍牙 BLE (NimBLE) GATT 伺服器: 供 RC 以 BLE 傳收命令 / 遙測
  * - SPIFFS 網頁介面 (ESPAsyncWebServer) + WebSocket 即時雙向
  * - 與 KKBOX 飛控板以 Serial2 (GPIO5/GPIO17, 9600) 交換 JSON
  * - 網頁: 系統狀態 / 網路設定 / PID 設定 / OTA / 使用者設定
@@ -20,6 +21,7 @@
 #include "config.h"
 #include "settings.h"
 #include "kkbox.h"
+#include "bt.h"
 #include "web.h"
 
 void setup() {
@@ -71,6 +73,7 @@ void setup() {
 
   /* ---------- 飛控板 UART & 網頁 ---------- */
   kkBegin();
+  btBegin();
   webSetup();
 
   Serial.println("[WEB] 伺服器已啟動 (port 80)");
@@ -91,6 +94,7 @@ void loop() {
     }
     /* t/ack/evt 以外 (如 err) 也一併廣播, 供 RS232 串口通訊頁即時顯示 RX */
     ws.textAll(line);
+    btSend(line);   /* 同步以 BLE notify 給 RC (未連線時自動略過) */
   }
 
   /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA) */

@@ -11,6 +11,7 @@
 #include "config.h"
 #include "settings.h"
 #include "kkbox.h"
+#include "bt.h"
 
 /* ================= 全域伺服器物件 ================= */
 static AsyncWebServer  server(WEB_PORT);
@@ -105,6 +106,12 @@ static String buildStatusJson() {
 
   s += ",\"kk\":{\"lines\":" + String(gKkLines);
   s += ",\"age\":" + String(gLastTelemetryMs ? (millis() - gLastTelemetryMs) : 999999) + "}";
+
+  /* 藍牙 */
+  s += ",\"bt\":{\"connected\":" + String(gBtConnected ? 1 : 0);
+  s += ",\"name\":\"" + btName() + "\"";
+  s += ",\"rx\":" + String(gBtRxLines) + ",\"conns\":" + String(gBtConnCount) + "}";
+
   s += ",\"token\":\"" + gSet.deviceToken + "\"}";
   return s;
 }
@@ -143,6 +150,11 @@ static String jsonEscape(const String& s) {
 static inline void kkSendLog(const String& s) {
   kkSend(s);
   ws.textAll("{\"ser\":{\"dir\":\"tx\",\"data\":\"" + jsonEscape(s) + "\"}}");
+}
+
+/* BLE: 收到 RC 寫入的一行命令 (JSON) -> 直通飛控板 (與 WebSocket 相同) */
+static void btOnLine(const String& msg) {
+  if (msg.startsWith("{")) kkSendLog(msg);
 }
 
 static void onWsEvent(AsyncWebSocket* s, AsyncWebSocketClient* c,
@@ -204,6 +216,20 @@ static void webSetup() {
     String cmd = arg(r, "cmd");
     if (cmd.length() && cmd[0] == '{') { kkSendLog(cmd); sendOk(r); }
     else sendErr(r, "bad command");
+  });
+
+  /* ---- 藍牙 (BLE) 狀態 / 斷線 ---- */
+  server.on("/api/bt", HTTP_GET, [](AsyncWebServerRequest* r) {
+    requireAuth(r); if (r->getResponse()) return;
+    String s = "{\"connected\":" + String(gBtConnected ? 1 : 0) +
+               ",\"name\":\"" + btName() + "\",\"rx\":" + String(gBtRxLines) +
+               ",\"conns\":" + String(gBtConnCount) + "}";
+    sendJson(r, s);
+  });
+  server.on("/api/bt", HTTP_POST, [](AsyncWebServerRequest* r) {
+    requireAuth(r); if (r->getResponse()) return;
+    if (arg(r, "action") == "disconnect") { btDisconnectClient(); sendOk(r); }
+    else sendErr(r, "bad action");
   });
 
   /* ---- 檔案系統 ---- */

@@ -9,9 +9,10 @@
  * -------------------------------------------------------------
  * 功能:
  *   - WiFi 連線, 以 WebSocket 用戶端連線至 WT32-ETH01 接收機
+ *   - 藍牙 BLE (NimBLE) 用戶端: 掃描 / 連線配對接收機, WiFi <-> BLE 通道切換
  *   - SSD1306 128x64 OLED 顯示遙測
  *   - SPIFFS 網頁介面 (ESPAsyncWebServer) + WebSocket
- *   - 模擬搖桿 / WiFi / 使用者 / OTA 設定
+ *   - 模擬搖桿 / WiFi / 藍牙 / 使用者 / OTA 設定
  * ============================================================= */
 
 #include <Arduino.h>
@@ -41,5 +42,17 @@
 
 /* ---------- 預設接收機連線 ---------- */
 #define DEF_RX_PORT 80
+
+/* ---------- 藍牙 BLE (NimBLE) ---------- */
+/* 連線通道: 0 = WiFi (WebSocket), 1 = 藍牙 (BLE) */
+#define DEF_BT_CHANNEL 0
+/* 本機 BLE 名稱前綴 (RC 不廣播, 僅設定裝置名) */
+#define BT_NAME_PREFIX "KKBOX-RC-"
+/* 掃描清單上限 */
+#define BT_SCAN_MAX 24
+/* 自訂 GATT UUID (需與接收機一致) */
+#define BLE_SVC_UUID    "6b6f0001-4b4b-4000-8000-00805f9b34fb"
+#define BLE_CMD_UUID    "6b6f0002-4b4b-4000-8000-00805f9b34fb"   /* RC -> RX (write) */
+#define BLE_TEL_UUID    "6b6f0003-4b4b-4000-8000-00805f9b34fb"   /* RX -> RC (notify) */
 
 #endif

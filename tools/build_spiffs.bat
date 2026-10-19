@@ -15,7 +15,7 @@ rem    build_spiffs.bat ESP32_D1_mini_rc
 rem    build_spiffs.bat ESP32_D1_mini_rc 0x20000
 rem
 rem  預設大小(依專案/分割表):
-rem    WT32_ETH01_receiver : 0x160000  (Default 4MB with spiffs)
+rem    WT32_ETH01_receiver : 0x20000   (Minimal SPIFFS 1.9MB APP)
 rem    ESP32_D1_mini_rc    : 0x20000   (Minimal SPIFFS 1.9MB APP)
 rem
 rem  輸出: <sketch>\build\spiffs.bin
@@ -42,7 +42,7 @@ rem ---- 決定 SPIFFS 分割區大小 ----
 set "SIZE=%~2"
 if not defined SIZE (
   echo !SKETCH! | findstr /I "WT32_ETH01_receiver" >nul
-  if not errorlevel 1 set "SIZE=0x160000"
+  if not errorlevel 1 set "SIZE=0x20000"
 )
 if not defined SIZE (
   echo !SKETCH! | findstr /I "ESP32_D1_mini_rc" >nul
@@ -80,5 +80,5 @@ echo.
 echo [完成] 已產生: "%OUT%"
 echo.
 echo 燒錄範例 (依實際 COM 埠與 partition offset):
-echo   esptool.py --chip esp32 --port COMx write_flash 0x290000 "%OUT%"
-echo   WT32-ETH01 offset=0x290000 / ESP32 D1 mini offset=0x3D0000
+echo   esptool.py --chip esp32 --port COMx write_flash 0x3D0000 "%OUT%"
+echo   兩者皆為 Minimal SPIFFS 分割表, offset=0x3D0000

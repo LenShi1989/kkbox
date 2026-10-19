@@ -6,8 +6,9 @@
  * ---------------------------------------------------------------
  * - WiFi 連線
  * - WebSocket 用戶端連線 WT32-ETH01 接收機, 收發遙測 / 命令
+ * - 藍牙 BLE (NimBLE) 用戶端: 掃描 / 連線配對接收機, WiFi <-> BLE 通道切換
  * - SSD1306 128x64 OLED 顯示遙測
- * - SPIFFS 網頁介面: 系統狀態 / 網路設定 / 模擬搖桿 / OTA / 使用者設定
+ * - SPIFFS 網頁介面: 系統狀態 / 網路設定 / 藍牙連線 / 模擬搖桿 / OTA / 使用者設定
  * ---------------------------------------------------------------
  * 網頁預設帳密 admin / kkbox。首次使用請於「網路設定」填入接收機 IP 與 Token。
  */
@@ -23,6 +24,7 @@ static AsyncWebServer server(WEB_PORT);
 static AsyncWebSocket localWs("/ws");
 
 #include "telem.h"
+#include "bt.h"
 #include "display.h"
 #include "link.h"
 #include "web.h"
@@ -67,6 +69,8 @@ void setup() {
   if (gSet.rxHost.length()) linkBegin();
   else Serial.println("[LINK] 尚未設定接收機, 請由網頁設定");
 
+  btBegin();
+
   if (gOledOk) { oled.clearDisplay(); oled.display(); }
   Serial.println("[WEB] 伺服器已啟動 (port 80)");
 }
@@ -82,6 +86,7 @@ void loop() {
     }
   }
 
+  btLoop();
   linkLoop();
   localWs.cleanupClients();
   ElegantOTA.loop();

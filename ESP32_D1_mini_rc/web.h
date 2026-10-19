@@ -95,9 +95,12 @@ static String buildStatusJson() {
   s += ",\"ap\":{\"active\":" + String(ap ? 1 : 0);
   s += ",\"ssid\":\"" + apSsid() + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
 
-  s += ",\"link\":{\"up\":" + String(gLinkUp ? 1 : 0);
+  s += ",\"link\":{\"up\":" + String(linkUp() ? 1 : 0);
   s += ",\"host\":\"" + gSet.rxHost + "\",\"port\":" + String(gSet.rxPort);
   s += ",\"age\":" + String(gTelemetryMs ? (millis() - gTelemetryMs) : 999999) + "}";
+  s += ",\"chan\":" + String(gSet.channel ? 1 : 0);
+  s += ",\"wifiUp\":" + String(gLinkUp ? 1 : 0);
+  s += ",\"btUp\":" + String(gBtUp ? 1 : 0);
   s += ",\"kkAck\":\"" + jsonEsc(gLastAck) + "\"";
   s += ",\"oled\":" + String(gOledOk ? 1 : 0) + "}";
   return s;
@@ -131,7 +134,7 @@ static void onLocalWs(AsyncWebSocket* s, AsyncWebSocketClient* c,
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
       String msg = String((char*)data).substring(0, len);
       if (msg.startsWith("{")) {
-        if (gLinkUp) linkSend(msg);   /* 轉送接收機 -> 飛控板 */
+        if (linkUp()) linkSend(msg);   /* 轉送接收機 -> 飛控板 */
         else c->text("{\"err\":\"link down\"}");   /* 斷線時明確回報, 不再靜默丟棄 */
       }
     }
@@ -176,7 +179,7 @@ static void webSetup() {
     requireAuth(r); if (r->getResponse()) return;
     String cmd = arg(r, "cmd");
     if (!cmd.length() || cmd[0] != '{') { sendErr(r, "bad command"); return; }
-    if (!gLinkUp) { sendErr(r, "link down", 503); return; }
+    if (!linkUp()) { sendErr(r, "link down", 503); return; }
     linkSend(cmd); sendOk(r);
   });
 
@@ -246,6 +249,51 @@ static void webSetup() {
     linkWs.disconnect();
     linkBegin();
     sendOk(r);
+  });
+
+  /* 藍牙 (BLE) 設定 */
+  server.on("/api/bt", HTTP_GET, [](AsyncWebServerRequest* r) {
+    requireAuth(r); if (r->getResponse()) return;
+    String s = "{\"up\":" + String(gBtUp ? 1 : 0);
+    s += ",\"scanning\":" + String(gBtScanning ? 1 : 0);
+    s += ",\"chan\":" + String(gSet.channel ? 1 : 0);
+    s += ",\"name\":\"" + jsonEsc(gSet.btName) + "\"";
+    s += ",\"addr\":\"" + gSet.btAddr + "\"";
+    s += ",\"rx\":" + String(gBtRxLines);
+    s += ",\"err\":\"" + jsonEsc(gBtLastErr) + "\"";
+    s += ",\"devs\":" + btScanJson() + "}";
+    sendJson(r, s);
+  });
+  server.on("/api/bt", HTTP_POST, [](AsyncWebServerRequest* r) {
+    requireAuth(r); if (r->getResponse()) return;
+    String a = arg(r, "action");
+    if (a == "scan") {
+      btScanStart();
+      sendOk(r);
+    } else if (a == "stop") {
+      btScanStop();
+      sendOk(r);
+    } else if (a == "connect") {
+      String addr = arg(r, "addr");
+      if (!addr.length()) { sendErr(r, "missing addr"); return; }
+      btConnectAddr(addr, arg(r, "name"));
+      sendOk(r);
+    } else if (a == "disconnect") {
+      btDisconnect();
+      sendOk(r);
+    } else if (a == "clear") {
+      btClear();
+      sendOk(r);
+    } else if (a == "channel") {
+      gSet.channel = (uint8_t)(arg(r, "ch", "0").toInt() ? 1 : 0);
+      settingsSaveBt();
+      if (gSet.channel == 1 && gSet.btAddr.length() && !gBtUp) {
+        btConnectAddr(gSet.btAddr, gSet.btName);
+      }
+      sendOk(r);
+    } else {
+      sendErr(r, "bad action");
+    }
   });
 
   /* 使用者設定 */

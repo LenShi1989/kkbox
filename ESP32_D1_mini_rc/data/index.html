@@ -28,6 +28,7 @@
     <nav id="nav">
       <a data-page="status"   class="active">系統狀態</a>
       <a data-page="network">網路設定</a>
+      <a data-page="bt">藍牙連線</a>
       <a data-page="joy">模擬搖桿</a>
       <a data-page="ota">OTA 更新</a>
       <a data-page="user">使用者設定</a>
@@ -129,6 +130,46 @@
         <label>連接埠 <input id="lk-port" type="number" value="80"></label>
         <label>Token <input id="lk-token" placeholder="接收機使用者設定頁的 Token"></label>
         <button id="lk-save">儲存並重新連線</button>
+      </div>
+    </section>
+
+    <!-- 藍牙連線 -->
+    <section id="page-bt" class="page">
+      <h2>藍牙連線</h2>
+
+      <h3>連線通道</h3>
+      <div class="card">
+        <div class="row">
+          <button id="bt-chan-wifi" class="ghost">WiFi</button>
+          <button id="bt-chan-ble" class="ghost">藍牙</button>
+          <span class="muted" id="bt-chan-state">目前：-</span>
+        </div>
+        <p class="muted small">選擇命令要經由哪條連線傳送。WiFi 與藍牙可同時連線，切換通道只改變命令走向。</p>
+      </div>
+
+      <h3>狀態</h3>
+      <div class="card">
+        <div class="row"><span class="k">BLE 連線</span><span id="bt-up">-</span></div>
+        <div class="row"><span class="k">已配對接收機</span><span id="bt-paired">-</span></div>
+        <div class="row"><span class="k">本機名稱</span><span id="bt-name">-</span></div>
+        <div class="row"><span class="k">接收筆數</span><span id="bt-rx">0</span></div>
+      </div>
+
+      <h3>掃描接收機</h3>
+      <div class="card">
+        <p class="muted small">接收機開機後會以 <code>KKBOX-RX-&lt;MAC後4碼&gt;</code> 廣播。</p>
+        <div class="row">
+          <button id="bt-scan">掃描</button>
+          <button id="bt-stop" class="ghost">停止</button>
+          <span class="muted" id="bt-scan-state"></span>
+        </div>
+        <select id="bt-list" size="6" class="listbox"></select>
+        <div class="row">
+          <button id="bt-connect">連線配對</button>
+          <button id="bt-disconnect" class="ghost">斷線</button>
+          <button id="bt-clear" class="danger">清除配對</button>
+        </div>
+        <div id="bt-err" class="err"></div>
       </div>
     </section>
 

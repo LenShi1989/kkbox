@@ -239,6 +239,7 @@ kkbox 飛控板 (ATmega168)
 | `WebSockets`（arduinoWebSockets）                | 遙控器以 WebSocket 用戶端連接收機 |
 | `Adafruit SSD1306` + `Adafruit GFX Library`      | 遙控器 OLED                       |
 | `ArduinoJson`（v7）                              | 遙控器解析遙測                    |
+| `NimBLE-Arduino`（1.4.x）                        | 接收機/遙控器 BLE 連線            |
 
 > ElegantOTA 需在 `build_opt.h` 定義 `-DELEGANTOTA_USE_ASYNC_WEBSERVER=1`（兩專案已附）。
 > 兩專案的網頁檔在 `data/` 目錄，需上傳至裝置的 SPIFFS（見下方「燒錄方法 SOP」）。
@@ -246,8 +247,10 @@ kkbox 飛控板 (ATmega168)
 ### WT32-ETH01 接收機（`WT32_ETH01_receiver/`）
 
 - 開發板：`esp32:esp32:wt32-eth01`（Arduino IDE：`WT32-ETH01 Ethernet Module`）
-- 功能：RJ45（LAN8720A）+ WiFi、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
+- **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.35MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
+- 功能：RJ45（LAN8720A）+ WiFi、**藍牙 BLE（NimBLE）GATT 伺服器**、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
 - 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**PID 設定**、**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
+- 藍牙（BLE）作為 AP/STA 以外的第三種連線方式：開機即以廣播名稱 `KKBOX-RX-<MAC後4碼>` 提供 GATT 服務（含 CMD 寫入、TEL 通知兩特徵），供遙控器掃描配對；與 WiFi 併存，不需切換。
 
 | WT32-ETH01  | 連接對象          | 說明                            |
 | ----------- | ----------------- | ------------------------------- |
@@ -261,9 +264,9 @@ kkbox 飛控板 (ATmega168)
 ### ESP32 D1 mini 遙控器（`ESP32_D1_mini_rc/`）
 
 - 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`）
-- **分區請選 `Minimal SPIFFS (Large APPS with OTA)`**（程式約 1.26MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
-- 功能：WiFi 連線、以 WebSocket 連接收收機、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、**定高控制 (油門保持)**、OTA、登入。
-- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**模擬搖桿**（含定高切換）、**OTA 更新**、**使用者設定**。
+- **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.54MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
+- 功能：WiFi 連線、以 WebSocket 連接收收機、**藍牙 BLE（NimBLE）用戶端**、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、**定高控制 (油門保持)**、OTA、登入。
+- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**藍牙連線**（掃描／連線配對／清除、WiFi↔藍牙通道切換）、**模擬搖桿**（含定高切換）、**OTA 更新**、**使用者設定**。
 
 | ESP32 D1 mini | 連接對象          | 說明     |
 | ------------- | ----------------- | -------- |
@@ -282,7 +285,7 @@ Y   0.8        1460
                1350
 ```
 
-- 右上角狀態：`NO LINK` / `LINK`（是否連上接收機）。
+- 右上角狀態：WiFi 通道顯示 `NO LINK` / `LINK`，藍牙通道顯示 `BT ----` / `BT LINK`（是否連上接收機）。
 - 左側為陀螺三軸角速度與解鎖/油門；右側為四顆馬達輸出。
 
 ### 首次使用流程
@@ -322,7 +325,7 @@ Y   0.8        1460
    再於 `開發板管理員` 搜尋安裝 **esp32 by Espressif**（本專案以 **3.3.x** 驗證）。
 3. 安裝程式庫（程式庫管理員）：
    `ESP Async WebServer`、`Async TCP`、`ElegantOTA`、`WebSockets`、
-   `Adafruit SSD1306`、`Adafruit GFX Library`、`ArduinoJson`（v7）。
+   `Adafruit SSD1306`、`Adafruit GFX Library`、`ArduinoJson`（v7）、`NimBLE-Arduino`（1.4.x）。
 4. 驅動：USB-TTL（CH340/CP2102/FTDI）與遙控器的 USB 晶片驅動。
 
 ### 1. 接收機（`WT32_ETH01_receiver/`）
@@ -339,7 +342,8 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 步驟：
 
 1. 將 **IO0 接 GND**（進入下載模式）。
-2. 接上 USB-TTL，Arduino IDE 開發板選 **`WT32-ETH01 Ethernet Module`**（FQBN `esp32:esp32:wt32-eth01`）。
+2. 接上 USB-TTL，Arduino IDE 開發板選 **`WT32-ETH01 Ethernet Module`**（FQBN `esp32:esp32:wt32-eth01`），
+   **Partition Scheme 選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（程式約 1.35MB，用預設分區會編譯失敗）。
 3. 選對序列埠 → 按 **上傳**（編譯並燒錄程式）。
 4. 燒錄完成後，**移開 IO0 的接地** 並按 RESET（或重新上電）進入執行。
 
@@ -347,8 +351,8 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 
 1. 以 micro-USB 連接電腦。
 2. 開發板選 **`WEMOS D1 MINI ESP32`**（FQBN `esp32:esp32:d1_mini32`）。
-3. **Partition Scheme 選 `Minimal SPIFFS (1.9MB APP with OTA / 190KB SPIFFS)`**
-   ——程式約 1.26MB，用預設分區（1.25MB）會編譯失敗。
+3. **Partition Scheme 選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**
+   ——程式約 1.54MB，用預設分區（1.25MB）會編譯失敗。
 4. 按 **上傳**。若出現連線失敗，按住板上的 **BOOT(IO0)** 鍵再上傳。
 
 ### 3. 燒錄網頁檔（`data/` → SPIFFS）
@@ -357,9 +361,10 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 
 - **專案附的打包腳本（推薦）**：會自動尋找 mkspiffs 並依專案判斷分割大小，輸出至各專案的 `build\spiffs.bin`。
   ```powershell
-  tools\build_spiffs.bat WT32_ETH01_receiver   # size 0x160000 (offset 0x290000)
-  tools\build_spiffs.bat ESP32_D1_mini_rc      # size 0x20000  (offset 0x3D0000)
+  tools\build_spiffs.bat WT32_ETH01_receiver   # size 0x20000 (offset 0x3D0000)
+  tools\build_spiffs.bat ESP32_D1_mini_rc      # size 0x20000 (offset 0x3D0000)
   ```
+  （兩專案皆使用 `Minimal SPIFFS` 分割表，SPIFFS 位移同為 `0x3D0000`、大小 `0x20000`。）
   產生後再用 esptool 燒入：`esptool.py --chip esp32 --port COMx write_flash <offset> build\spiffs.bin`。
 - **Arduino IDE 1.8.x**：安裝 **ESP32 Sketch Data Upload** 外掛，
   使用 `Tools → ESP32 Sketch Data Upload`（分割區會依所選開發板自動帶入）。
@@ -378,6 +383,7 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
   瀏覽器開啟其 IP，登入 `admin / admin`。
 - **遙控器**：一律啟動 SoftAP `KKBOX-RC-<MAC後4碼>` / 密碼 `12345678`（WiFi STA 連線與 AP 共存，AP 網段 `192.168.10.x`，與接收機區隔），並於 OLED 顯示狀態。
 - 首次設定：接收機「使用者設定」取得 **裝置連結 Token**；遙控器「網路設定」填入接收機 **IP + Token**。
+- **藍牙（BLE）連線**：接收機開機即以 `KKBOX-RX-<MAC後4碼>` 廣播；遙控器於「藍牙連線」頁按 **掃描**，於清單點選接收機即 **連線配對**，再將通道切至 **藍牙** 即可（`清除` 可移除配對並斷線）。藍牙與 WiFi 連線可同時存在，切換通道只影響命令走哪條路。
 
 ### 5. 之後的更新：OTA
 
@@ -401,6 +407,7 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 | GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）           |
 | GET/POST | `/api/pid`（僅接收機）  | 三軸 PID，儲存後下傳飛控板                  |
 | GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                          |
+| GET/POST | `/api/bt`               | 藍牙狀態／掃描結果（GET）；`action=scan\\|stop\\|connect\\|disconnect\\|clear\\|channel`（POST，僅遙控器具連線控制） |
 | —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）              |
 
 > 所有 `/api/*`（除 `login`/`logout`）需帶 Session Cookie 或 `X-Auth` Token，否則回 `401`。

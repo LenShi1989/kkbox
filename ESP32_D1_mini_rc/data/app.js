@@ -93,6 +93,7 @@ $('nav').addEventListener('click', (e) => {
   document.querySelectorAll('#nav a').forEach(x => x.classList.toggle('active', x === a));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + a.dataset.page));
   if (a.dataset.page === 'network') loadNet();
+  if (a.dataset.page === 'bt') loadBt();
   if (a.dataset.page === 'user') loadUser();
 });
 
@@ -107,8 +108,10 @@ async function loadStatus() {
   $('s-fw').textContent = s.fw + ' ' + s.ver;
   $('s-uptime').textContent = fmtUptime(s.uptime);
   $('s-heap').textContent = (s.heap / 1024).toFixed(1) + ' KB';
-  const up = s.link.up && s.link.age < 2000;
-  $('s-link').textContent = s.link.up ? (up ? '已連線' : '連線中') : '未連線';
+  const bt = s.chan === 1;
+  const up = bt ? !!s.btUp : (s.link.up && s.link.age < 2000);
+  const linked = bt ? !!s.btUp : s.link.up;
+  $('s-link').textContent = (bt ? '藍牙：' : 'WiFi：') + (linked ? (up ? '已連線' : '連線中') : '未連線');
   $('s-link').style.color = up ? 'var(--ok)' : 'var(--muted)';
   $('net-dot').classList.toggle('on', s.wifi.connected);
 
@@ -122,8 +125,8 @@ async function loadStatus() {
   else $('s-ap').textContent = '-';
 
   const st = $('joy-state');
-  if (s.link.up && up) { $('joy-state').textContent = '已連線接收機'; }
-  else if (s.link.up) { $('joy-state').textContent = '連線中...'; }
+  if (linked && up) { $('joy-state').textContent = '已連線接收機'; }
+  else if (linked) { $('joy-state').textContent = '連線中...'; }
   else $('joy-state').textContent = '未連線';
 
   /* 飛控最後回應: 走 HTTP 輪詢, 瀏覽器 WS 中斷時仍可確認命令結果 */
@@ -275,6 +278,85 @@ $('lk-save').addEventListener('click', async () => {
     toast('已儲存，重新連線接收機');
   } catch (e) { toast('儲存失敗', 'err'); }
 });
+
+/* ---------- 藍牙 (BLE) 連線 ---------- */
+let btPoll = null;
+let btDevs = [];
+
+function renderBt(d) {
+  $('bt-up').textContent = d.up ? '已連線' : '未連線';
+  $('bt-up').style.color = d.up ? 'var(--ok)' : 'var(--muted)';
+  $('bt-paired').textContent = d.addr ? (d.name || d.addr) + ' (' + d.addr + ')' : '無';
+  $('bt-name').textContent = d.name || '-';
+  $('bt-rx').textContent = d.rx || 0;
+  $('bt-err').textContent = d.err || '';
+
+  $('bt-chan-state').textContent = '目前：' + (d.chan === 1 ? '藍牙' : 'WiFi');
+  $('bt-chan-ble').classList.toggle('danger', d.chan === 1);
+  $('bt-chan-wifi').classList.toggle('danger', d.chan !== 1);
+
+  if (d.scanning) {
+    $('bt-scan-state').textContent = '掃描中... ' + (d.devs ? d.devs.length : 0) + ' 台';
+  } else {
+    $('bt-scan-state').textContent = (d.devs ? d.devs.length : 0) + ' 台裝置';
+  }
+  const sel = $('bt-list');
+  const keep = sel.value;
+  btDevs = d.devs || [];
+  sel.innerHTML = '';
+  btDevs.sort((a, b) => b.rssi - a.rssi).forEach(n => {
+    const o = document.createElement('option');
+    o.value = n.addr;
+    o.textContent = (n.name || n.addr) + '  (' + n.rssi + ' dBm)';
+    sel.appendChild(o);
+  });
+  if (keep) sel.value = keep;
+}
+
+async function loadBt() {
+  let d; try { d = await api('/api/bt'); } catch (e) { return; }
+  renderBt(d);
+  if (d.scanning) {
+    if (!btPoll) btPoll = setInterval(loadBt, 1000);
+  } else if (btPoll) {
+    clearInterval(btPoll); btPoll = null;
+  }
+}
+
+$('bt-scan').addEventListener('click', async () => {
+  try { await api('/api/bt', { method: 'POST', body: { action: 'scan' } }); loadBt(); }
+  catch (e) { toast('掃描失敗: ' + e.message, 'err'); }
+});
+$('bt-stop').addEventListener('click', async () => {
+  try { await api('/api/bt', { method: 'POST', body: { action: 'stop' } }); } catch (e) {}
+  if (btPoll) { clearInterval(btPoll); btPoll = null; }
+  loadBt();
+});
+$('bt-connect').addEventListener('click', async () => {
+  const addr = $('bt-list').value;
+  if (!addr) { toast('請先掃描並選擇裝置', 'err'); return; }
+  const dev = btDevs.find(x => x.addr === addr) || {};
+  try {
+    await api('/api/bt', { method: 'POST', body: { action: 'connect', addr: addr, name: dev.name || '' } });
+    toast('正在連線配對…');
+    if (btPoll) { clearInterval(btPoll); btPoll = null; }
+    setTimeout(loadBt, 1500); setTimeout(loadBt, 4000);
+  } catch (e) { toast('連線失敗: ' + e.message, 'err'); }
+});
+$('bt-disconnect').addEventListener('click', async () => {
+  try { await api('/api/bt', { method: 'POST', body: { action: 'disconnect' } }); loadBt(); }
+  catch (e) { toast('斷線失敗', 'err'); }
+});
+$('bt-clear').addEventListener('click', async () => {
+  try { await api('/api/bt', { method: 'POST', body: { action: 'clear' } }); loadBt(); toast('已清除配對'); }
+  catch (e) { toast('清除失敗', 'err'); }
+});
+$('bt-chan-wifi').addEventListener('click', () => setChan(0));
+$('bt-chan-ble').addEventListener('click', () => setChan(1));
+async function setChan(ch) {
+  try { await api('/api/bt', { method: 'POST', body: { action: 'channel', ch: ch } }); loadBt(); loadStatus(); toast('通道：' + (ch ? '藍牙' : 'WiFi')); }
+  catch (e) { toast('切換失敗', 'err'); }
+}
 
 /* ---------- 使用者 ---------- */
 async function loadUser() {

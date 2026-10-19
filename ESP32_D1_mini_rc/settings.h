@@ -17,6 +17,15 @@ static inline String apSsid() {
   return String(buf);
 }
 
+/* BLE 裝置名稱 = 前綴 + MAC 後 4 碼 (例: KKBOX-RC-A1B2) */
+static inline String btDevName() {
+  uint8_t mac[6] = {0};
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  char buf[40];
+  snprintf(buf, sizeof(buf), "%s%02X%02X", BT_NAME_PREFIX, mac[4], mac[5]);
+  return String(buf);
+}
+
 struct Settings {
   /* 登入帳密 */
   String user;
@@ -30,6 +39,11 @@ struct Settings {
   String rxHost;
   uint16_t rxPort;
   String rxToken;
+
+  /* 藍牙 (BLE) 連線 */
+  uint8_t channel;      /* 0 = WiFi, 1 = 藍牙 */
+  String  btAddr;       /* 已配對接收機位址 (自動重連用) */
+  String  btName;       /* 已配對接收機名稱 (顯示用) */
 };
 
 static Preferences gPrefs;
@@ -51,6 +65,9 @@ static inline void settingsLoad() {
   gSet.rxHost  = gPrefs.getString("rxhost", "");
   gSet.rxPort  = gPrefs.getUShort("rxport", DEF_RX_PORT);
   gSet.rxToken = gPrefs.getString("rxtoken", "");
+  gSet.channel = gPrefs.getUChar("btch", DEF_BT_CHANNEL);
+  gSet.btAddr  = gPrefs.getString("btaddr", "");
+  gSet.btName  = gPrefs.getString("btname", "");
 }
 
 static inline void settingsSaveWifi() {
@@ -65,6 +82,11 @@ static inline void settingsSaveLink() {
 static inline void settingsSaveUser() {
   gPrefs.putString("user", gSet.user);
   gPrefs.putString("pass", gSet.pass);
+}
+static inline void settingsSaveBt() {
+  gPrefs.putUChar("btch", gSet.channel);
+  gPrefs.putString("btaddr", gSet.btAddr);
+  gPrefs.putString("btname", gSet.btName);
 }
 
 #endif
