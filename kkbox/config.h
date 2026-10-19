@@ -6,17 +6,19 @@
 #define FW_NAME    "KKBOX"
 #define FW_VERSION "1.0.0"
 
-/* ---------- RS232 (軟體序列 SoftwareSerial) ----------
- * 接腳重新定義: RS232-TX = PD1 = GPIO17 = Arduino D1
- *               RS232-RX = PD2 = GPIO18 = Arduino D2
- * 硬體 UART 停用 (D0/RXD 釋出); 注意 TX 與硬體 UART TXD 同腳 (PD1),
- * 故不可再 Serial.begin(), 以免兩者衝突。
+/* ---------- RS232 (TX=硬體 UART, RX=SoftwareSerial) ----------
+ * 接腳: RS232-TX = PD1 = GPIO17 = Arduino D1  (硬體 UART TXD, 同腳)
+ *       RS232-RX = PD2 = GPIO18 = Arduino D2  (SoftwareSerial)
+ * TX 走硬體 UART: 發送由 UDRE 中斷驅動、不關中斷, 遙測發送期間仍可
+ * 接收命令; SoftwareSerial 發送逐字元 cli 會把 RX 屏蔽掉, 這正是
+ * 命令時好時壞/延遲收到的主因。硬體 UART 的 D0/RXD 已釋出並停用。
  */
-#define RS232_RX_PIN 2   /* GPIO18 = PD2 = D2 */
-#define RS232_TX_PIN 1   /* GPIO17 = PD1 = D1 */
-/* 57600: 8MHz 下 SoftwareSerial RX 收 115200 不穩 (與 Servo 中斷共存,
- * 每位元僅 69 CPU 週期); 57600 (139 週期/位元) 可靠且頻寬足夠遙測。 */
-#define SERIAL_BAUD 9600
+#define RS232_RX_PIN 2   /* GPIO18 = PD2 = D2 (SoftwareSerial) */
+#define RS232_TX_PIN 1   /* GPIO17 = PD1 = D1 (硬體 UART TXD) */
+/* 57600: 8MHz SoftwareSerial RX 的可靠上限 (139 週期/位元);
+ * 9600 雖位元更寬, 但遙測一幀要 172ms, 發送佔滿線路反而讓 RX 幾乎全盲。
+ * 硬體 UART TX 於 57600 實測誤差約 2%, 可用 (原設計 115200 誤差 3.5%)。 */
+#define SERIAL_BAUD 57600
 
 /* ---------- 板載 LED1 ----------
  * 原理圖 LED1 = ATmega168 PB6 (GPIO6)。

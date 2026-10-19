@@ -9,7 +9,7 @@
 | VCC                 | N/A      | 4,6          | DC 5V                                              |
 | GND                 | N/A      | 3,5          | 接地                                               |
 | RS232-RX            | 18       | 32           | RS232 RX(57600 bps, 8N1, SoftwareSerial)           |
-| RS232-TX            | 17       | 31           | RS232 TX(57600 bps, 8N1, SoftwareSerial)           |
+| RS232-TX            | 17       | 31           | RS232 TX(57600 bps, 8N1, 硬體 UART TXD)            |
 | Roll Gain           | 11       | 26           | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
 | Pitch Gain          | 12       | 27           | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
 | Yaw Gain            | 13       | 28           | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）     |
@@ -81,7 +81,7 @@ kkbox/
 
 - Arduino IDE, 開啟 `kkbox/kkbox.ino`
 - 開發板: `Arduino Pro or Pro Mini` → `ATmega168, 8MHz` (本板依 docs 使用內建 8MHz RC 振盪器)
-- 燒錄: 透過 ISP (AVRISP/Arduino as ISP)，或先燒 bootloader 後用 USB-TTL 接硬體 UART (D0 RXD / D1 TXD) 燒錄；RS232 連接器（D1/D2, SoftwareSerial）僅供韌體通訊
+- 燒錄: 透過 ISP (AVRISP/Arduino as ISP)，或先燒 bootloader 後用 USB-TTL 接硬體 UART (D0 RXD / D1 TXD) 燒錄；RS232 連接器（D1=TX / D2=RX）僅供韌體通訊
 
 ## Arduino 腳位對照
 
@@ -90,7 +90,7 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 | 功能                | GPIO     | 埠          | Arduino   | 說明                          |
 | ------------------- | -------- | ----------- | --------- | ----------------------------- |
 | RS232 RX            | 18       | PD2         | D2        | 軟體 UART RX (SoftwareSerial) |
-| RS232 TX            | 17       | PD1         | D1        | 軟體 UART TX (SoftwareSerial) |
+| RS232 TX            | 17       | PD1         | D1        | 硬體 UART TXD                 |
 | 陀螺儀 Yaw          | 8        | ADC0        | A0        | 壓電陀螺儀                    |
 | 陀螺儀 Pitch        | 9        | ADC1        | A1        | 壓電陀螺儀                    |
 | 陀螺儀 Roll         | 10       | ADC2        | A2        | 壓電陀螺儀                    |
@@ -104,12 +104,14 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 > 注意：LED1 (PB6) 與 M8 (PB7) 是標準 Arduino 的晶體腳。本板使用內建振盪器才可當 GPIO；
 > 若外接晶體，請在 `config.h` 將 `LED1_DIRECT` 設為 0 並改用其他腳位。
 >
-> RS232 已改為 **SoftwareSerial**（`kkbox/config.h` 的 `RS232_RX_PIN`/`RS232_TX_PIN`）：
-> TX=D1(GPIO17)、RX=D2(GPIO18)，硬體 UART 的 D0(RXD) 已釋出。
-> TX 與硬體 UART TXD 同腳（PD1），韌體內不會 `Serial.begin()`。
-> bootloader 下載仍須接硬體 UART（D0=RXD / D1=TXD），RS232 連接器（D1/D2）僅供韌體通訊。
-> 鮑率已由 115200 降為 **57600**：8MHz 下 SoftwareSerial RX 收 115200 不穩（與 Servo 中斷共存，
-> 每位元僅 69 CPU 週期），57600（139 週期/位元）可靠且頻寬足夠遙測。
+> RS232 採 **TX=硬體 UART、RX=SoftwareSerial**（`kkbox/config.h`）：
+> TX=D1(GPIO17) 走硬體 UART TXD（與 RX 不同腳），RX=D2(GPIO18) 為 SoftwareSerial；
+> 硬體 UART 的 D0(RXD) 已釋出並停用（停 RX 中斷 + 內部上拉，免懸空雜訊）。
+> 硬體 UART 發送由 UDRE 中斷驅動、**不關中斷**，遙測輸出不會屏蔽命令接收；
+> SoftwareSerial 發送則逐字元關中斷（cli），是先前「命令時好時壞／延遲收到」的主因。
+> 鮑率 **57600**：8MHz SoftwareSerial RX 的可靠上限（139 週期/位元）；
+> 9600 雖位元較寬，但遙測一幀要 172ms，發送佔滿線路反而讓 RX 幾乎全盲。
+> ISP 燒錄（PROISP）走 SPI 與 UART 無關，不受影響。
 
 ## 序列埠 JSON 協定
 
@@ -169,7 +171,7 @@ python tools/kkbox_monitor.py --port COM3
 ## 無線傳輸架構（WT32-ETH01 接收機 + ESP32 D1 mini 遙控器）
 
 ```
-KK飛控板 ──序列埠(57600, SoftwareSerial)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
+KK飛控板 ──序列埠(57600 8N1)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
    (Atmega168)            (有線+無線 網頁/WS)                          (OLED + 網頁模擬搖桿)
                                  │
                                  └── 瀏覽器 (有線或無線網頁，即時 WebSocket)
