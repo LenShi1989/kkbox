@@ -45,11 +45,12 @@
 #define DEF_PASS  "admin"
 
 /* ---------- 預設 PID (與 kkbox/config.h 一致) ---------- */
+/* roll/pitch KI 即自動配平積分 (auto-trim): 搖桿置中時緩慢學習配平量 */
 #define DEF_ROLL_KP   3.0f
-#define DEF_ROLL_KI   0.0f
+#define DEF_ROLL_KI   0.08f
 #define DEF_ROLL_KD   8.0f
 #define DEF_PITCH_KP  3.0f
-#define DEF_PITCH_KI  0.0f
+#define DEF_PITCH_KI  0.08f
 #define DEF_PITCH_KD  8.0f
 #define DEF_YAW_KP    4.0f
 #define DEF_YAW_KI    0.5f

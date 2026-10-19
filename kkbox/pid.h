@@ -20,7 +20,7 @@ public:
 
   void reset() { _iTerm = 0; _prevMeas = 0; _havePrev = false; }
 
-  float update(float setpoint, float measured, float dt) {
+  float update(float setpoint, float measured, float dt, bool allowI = true) {
     if (dt <= 0) return 0;
 
     float error = setpoint - measured;
@@ -30,10 +30,12 @@ public:
     _prevMeas = measured;
     _havePrev = true;
 
-    _iTerm += _ki * error * dt;
-    if (_iLimit > 0) {
-      if (_iTerm >  _iLimit) _iTerm =  _iLimit;
-      if (_iTerm < -_iLimit) _iTerm = -_iLimit;
+    if (allowI) {
+      _iTerm += _ki * error * dt;
+      if (_iLimit > 0) {
+        if (_iTerm >  _iLimit) _iTerm =  _iLimit;
+        if (_iTerm < -_iLimit) _iTerm = -_iLimit;
+      }
     }
 
     float out = _kp * error + _iTerm - _kd * d;

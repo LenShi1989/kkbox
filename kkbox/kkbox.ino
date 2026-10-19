@@ -87,8 +87,12 @@ static void controlStep(float dt) {
 
   float rOut = 0.0f, pOut = 0.0f, yOut = 0.0f;
   if (armed) {
-    rOut = pidRoll.update(setRoll,  gyroNow.roll,  dt);
-    pOut = pidPitch.update(setPitch, gyroNow.pitch, dt);
+    /* 自動配平: 僅在 roll/pitch 搖桿置中時累積積分, 依陀螺殘餘轉速緩慢學習
+     * 配平量; 搖桿離開中央即凍結 (保留配平值)。yaw 積分維持常開。 */
+    bool centered = setRoll  < TRIM_DEADBAND && setRoll  > -TRIM_DEADBAND &&
+                    setPitch < TRIM_DEADBAND && setPitch > -TRIM_DEADBAND;
+    rOut = pidRoll.update(setRoll,  gyroNow.roll,  dt, centered);
+    pOut = pidPitch.update(setPitch, gyroNow.pitch, dt, centered);
     yOut = pidYaw.update(setYaw,   gyroNow.yaw,   dt);
   } else {
     pidRoll.reset();
@@ -140,7 +144,6 @@ static void sendTelemetry() {
 
   Serial.print(F("{\"t\":"));               Serial.print(now);
   Serial.print(F(",\"armed\":"));           Serial.print(armed);
-  Serial.print(F(",\"led\":"));             Serial.print(ledValue);
   Serial.print(F(",\"mcount\":"));          Serial.print(motorCount);
   Serial.print(F(",\"hold\":"));            Serial.print(hold);
 
@@ -255,7 +258,7 @@ static void handleCommand(const char* s) {
     Serial.println(F("}"));
 
   } else {
-    Serial.println(F("{\"err\":\"unknown cmd\"}"));
+    Serial.println(F("{\"err\":\"bad cmd\"}"));
   }
 }
 

@@ -161,6 +161,7 @@ function applyTelemetry(t) {
 
   if (t.set) updateGauge(t.set.thr);
   if (t.motor) updatePie(t.motor);
+  updateGyroBars(t.gyro);
   $('f-armed').textContent = t.armed ? '解鎖' : '上鎖';
   if (t.mcount !== undefined) {
     $('f-mcount').textContent = t.mcount + ' 顆';
@@ -199,6 +200,22 @@ function updatePie(motors) {
   }
   pie.style.background = 'conic-gradient(' + stops.join(',') + ')';
   $('motor-legend').innerHTML = html;
+}
+
+/* ---------- 三軸陀螺儀橫條圖 (±200 deg/s, 0 置中) ---------- */
+const GYRO_FS = 200;
+
+function updateGyroBars(g) {
+  ['roll', 'pitch', 'yaw'].forEach(function (k) {
+    const v = Math.max(-GYRO_FS, Math.min(GYRO_FS, g[k] || 0));
+    const frac = v / GYRO_FS;
+    const fill = $('gyro-bar-' + k), val = $('gyro-val-' + k);
+    if (!fill) return;
+    fill.style.left = (50 + Math.min(0, frac) * 50) + '%';
+    fill.style.width = (Math.abs(frac) * 50) + '%';
+    fill.style.background = v >= 0 ? 'var(--accent)' : 'var(--warn)';
+    if (val) val.textContent = (v >= 0 ? '+' : '') + v.toFixed(0);
+  });
 }
 
 let motorsTouched = false;

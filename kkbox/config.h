@@ -113,14 +113,20 @@ static inline void ledWrite(uint8_t on) {
 #define PID_OUT_LIMIT 300.0f
 #define PID_I_LIMIT   50.0f
 #define PID_ROLL_KP   3.0f
-#define PID_ROLL_KI   0.0f
+#define PID_ROLL_KI   0.08f   /* 自動配平 (auto-trim), 見下方 TRIM_DEADBAND */
 #define PID_ROLL_KD   8.0f
 #define PID_PITCH_KP  3.0f
-#define PID_PITCH_KI  0.0f
+#define PID_PITCH_KI  0.08f   /* 自動配平 (auto-trim) */
 #define PID_PITCH_KD  8.0f
 #define PID_YAW_KP    4.0f
 #define PID_YAW_KI    0.5f
 #define PID_YAW_KD    0.0f
+
+/* ---------- 自動配平 (auto-trim) ----------
+ * 依三軸陀螺儀狀態自動修正平衡: roll/pitch 的積分項 (Ki) 只在搖桿置中時累積,
+ * 依陀螺殘餘轉速緩慢學習配平量, 抵銷機體/ESC 的固定偏壓, 讓機體不再持續漂移;
+ * 搖桿離開中央即凍結積分 (保留已學習的配平值)。積分上限 = PID_I_LIMIT。 */
+#define TRIM_DEADBAND 10.0f   /* 搖桿命令絕對值小於此值視為置中 (deg/s) */
 
 /* ---------- 序列緩衝 (ATmega168 僅 1KB SRAM, 請勿任意放大) ---------- */
 #define LINE_BUF_SIZE   72

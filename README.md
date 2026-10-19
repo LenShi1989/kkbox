@@ -142,7 +142,6 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 {
   "t": 12345,
   "armed": 1,
-  "led": 0,
   "mcount": 4,
   "hold": 0,
   "gyro": { "roll": 1.23, "pitch": -4.56, "yaw": 0.78 },
@@ -162,9 +161,23 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
   - 8 槳 X8 同軸：4 臂、每臂上下兩顆反槳；上槳 M1~M4 與 4 槳臂位相同，下槳 M5~M8 與同臂上槳同 roll/pitch、yaw 反號。
   - M8 於本板改接 **D4（PD4 / GPIO20）**；原 docs 的 M8=GPIO7(PB7/XTAL2) 無法當 GPIO。切換後 Servo 會重新掛載，建議於解鎖前設定。
 - **定高（油門保持）**：`{"cmd":"hold","on":1}` 鎖定當下油門，之後的 `throttle` 命令一律忽略，直到 `{"cmd":"hold","on":0}`；`arm`/`disarm` 會自動清除。本板無高度感測器，故屬「定油門」而非真正的定高。
-- **資源**：kkbox 韌體約 14134 B（98% Flash）、RAM 約 814 B（79%）——ATmega168 已接近上限，新增功能務必留意空間。
+- **自動配平（auto-trim）**：依三軸陀螺儀狀態自動修正平衡。roll/pitch 的積分項（`PID_ROLL_KI`/`PID_PITCH_KI`，預設 `0.08`）**只在搖桿置中時累積**，緩慢學習配平量以抵銷機體/ESC 的固定偏壓，讓機體不再持續漂移；搖桿離開中央即凍結積分、保留已學習的配平值。積分上限為 `PID_I_LIMIT`（`50`）。置中判定範圍為 `TRIM_DEADBAND`（`10` deg/s）。欲關閉請把 roll/pitch `KI` 設為 `0`。
+- **資源**：kkbox 韌體約 14302 B（99% Flash）、RAM 約 814 B（79%）——ATmega168 已近滿載，新增功能務必留意空間。
 
-## 遠端控制板載 LED1 測試
+## 板載 LED1 狀態燈
+
+kkbox 飛控板上的 **LED1 狀態燈**（PB6 / Arduino pin 13）用來即時顯示飛控狀態，並可由遠端切換模式：
+
+| 模式 | 命令 | 顯示 |
+| --- | --- | --- |
+| `blink`（預設） | `{"cmd":"led","mode":"blink"}` | **未解鎖**：慢閃（約 2Hz，500ms 週期）；**已解鎖**：快閃（約 20Hz，25ms 週期） |
+| `on` | `{"cmd":"led","mode":"on"}` | 恆亮 |
+| `off` | `{"cmd":"led","mode":"off"}` | 恆暗 |
+
+- 開機預設為 `blink`：可由閃爍速度一眼判斷是否已解鎖（快閃＝已解鎖，慢閃＝上鎖）。
+- LED 模式與狀態可由接收機或遙控器網頁的指令轉送設定，指令等同 `{"cmd":"led","mode":"on"}`（或 `{"cmd":"led","value":1}`）。
+
+### 遠端控制板載 LED1 測試
 
 ```powershell
 python tools/kkbox_monitor.py --port COM3 --led blink
