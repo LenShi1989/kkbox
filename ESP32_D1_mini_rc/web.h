@@ -287,6 +287,7 @@ static void webSetup() {
     } else if (a == "channel") {
       gSet.channel = (uint8_t)(arg(r, "ch", "0").toInt() ? 1 : 0);
       settingsSaveBt();
+      btApplyRadio();
       if (gSet.channel == 1 && gSet.btAddr.length() && !gBtUp) {
         btConnectAddr(gSet.btAddr, gSet.btName);
       }

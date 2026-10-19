@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 #include <NimBLEDevice.h>
+#include <WiFi.h>
+#include "esp_coexist.h"
 #include "config.h"
 #include "settings.h"
 
@@ -27,6 +29,7 @@ static NimBLEAddress gBtConnAddr;
 static bool          gBtDoConnect  = false;
 static String        gBtTargetAddr = "";
 static String        gBtTargetName = "";
+static uint32_t      gBtReconnectAt = 0;   /* 下次自動重連時間 (ms) */
 
 static NimBLEClient*                gBtClient = nullptr;
 static NimBLERemoteCharacteristic*  gBtCmdChr = nullptr;
@@ -96,6 +99,7 @@ class BtClientCB : public NimBLEClientCallbacks {
     gBtUp = false;
     gBtCmdChr = nullptr;
     gBtTelChr = nullptr;
+    if (gSet.channel == 1) gBtReconnectAt = millis() + 500;   /* 斷線後立即重連 */
     Serial.println("[BLE] 已斷線");
   }
 };
@@ -122,8 +126,9 @@ static bool btConnectNow(const NimBLEAddress& addr) {
   if (!gBtClient) {
     gBtClient = NimBLEDevice::createClient();
     gBtClient->setClientCallbacks(&btClientCB, false);
-    gBtClient->setConnectTimeout(5000);
-    gBtClient->setConnectionParams(12, 12, 0, 51);
+    gBtClient->setConnectTimeout(10000);
+    /* 連線間隔 15~30ms, supervision timeout 400*10ms=4s (容忍數次漏失事件) */
+    gBtClient->setConnectionParams(12, 24, 0, 400);
   }
   gBtLastErr = "";
   if (!gBtClient->connect(addr)) { gBtLastErr = "連線失敗"; return false; }
@@ -197,6 +202,17 @@ static String btScanJson() {
   return s;
 }
 
+/* 依目前通道設定無線共存偏好, 降低 WiFi 對 BLE 的射頻干擾 */
+static inline void btApplyRadio() {
+  if (gSet.channel == 1) {
+    esp_coex_preference_set(ESP_COEX_PREFER_BT);   /* 藍牙優先使用射頻 */
+    WiFi.setSleep(true);                           /* WiFi 省電模式, 減少搶佔 */
+  } else {
+    esp_coex_preference_set(ESP_COEX_PREFER_BALANCE);
+    WiFi.setSleep(false);
+  }
+}
+
 static inline void btBegin() {
   NimBLEDevice::init(btDevName().c_str());
   NimBLEDevice::setPowerLevel(ESP_PWR_LVL_P9);
@@ -206,6 +222,7 @@ static inline void btBegin() {
   scan->setActiveScan(true);
   scan->setInterval(100);
   scan->setWindow(80);
+  btApplyRadio();
   Serial.printf("[BLE] 初始化完成: %s\n", btDevName().c_str());
   /* 通道為藍牙且已配對過: 開機自動重連 */
   if (gSet.channel == 1 && gSet.btAddr.length()) {
@@ -216,15 +233,17 @@ static inline void btBegin() {
 static inline void btLoop() {
   /* 找到目標位址且尚未連線 -> 進行 (阻塞式) 連線 */
   if (gBtDoConnect && !gBtUp) {
-    gBtDoConnect = false;
+    gBtDoConnect   = false;
+    gBtReconnectAt = 0;
     btConnectNow(gBtConnAddr);
   }
-  /* 通道為藍牙但未連線: 每 10 秒自動重試 */
-  static uint32_t lastTry = 0;
-  if (gSet.channel == 1 && !gBtUp && !gBtScanning &&
-      gSet.btAddr.length() && millis() - lastTry > 10000) {
-    lastTry = millis();
-    btConnectAddr(gSet.btAddr, gSet.btName);
+  /* 通道為藍牙但未連線: 自動重連 (斷線後 0.5s, 其餘每 3 秒) */
+  if (gSet.channel == 1 && !gBtUp && !gBtScanning && gSet.btAddr.length()) {
+    if (gBtReconnectAt == 0) gBtReconnectAt = millis() + 500;
+    if ((int32_t)(millis() - gBtReconnectAt) >= 0) {
+      gBtReconnectAt = millis() + 3000;
+      btConnectAddr(gSet.btAddr, gSet.btName);
+    }
   }
 }
 

@@ -91,6 +91,11 @@ static inline void linkBegin() {
 }
 
 static inline void linkLoop() {
+  /* 藍牙通道: 停用 WiFi WebSocket, 避免與 BLE 搶射頻 (切回 WiFi 通道後自動重連) */
+  if (gSet.channel == 1) {
+    if (gLinkUp) linkWs.disconnect();
+    return;
+  }
   linkWs.loop();
 }
 

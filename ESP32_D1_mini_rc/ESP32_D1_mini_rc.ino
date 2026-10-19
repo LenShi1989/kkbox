@@ -76,9 +76,10 @@ void setup() {
 }
 
 void loop() {
-  /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA) */
+  /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA);
+   * 藍牙通道時不重連, 避免掃描/重連搶佔射頻 */
   static uint32_t lastWifiTry = 0;
-  if (gSet.ssid.length() && WiFi.status() != WL_CONNECTED) {
+  if (gSet.channel == 0 && gSet.ssid.length() && WiFi.status() != WL_CONNECTED) {
     if (millis() - lastWifiTry > 10000) {
       lastWifiTry = millis();
       WiFi.disconnect();
