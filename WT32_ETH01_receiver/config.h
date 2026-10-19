@@ -22,7 +22,8 @@
 /* ---------- 與 KKBOX 飛控板的 UART ---------- */
 #define KK_RX_PIN   5
 #define KK_TX_PIN   17
-#define KK_BAUD     57600
+/* 9600: 飛控板 RX 為 8MHz SoftwareSerial, 實測僅 9600 能可靠收到命令 */
+#define KK_BAUD     9600
 
 /* ---------- 內建 LAN8720A RJ45 (WT32-ETH01) ---------- */
 #define ETH_ADDR    1

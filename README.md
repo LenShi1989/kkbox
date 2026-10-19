@@ -8,8 +8,8 @@
 | ------------------- | -------- | ------------ | -------------------------------------------------- |
 | VCC                 | N/A      | 4,6          | DC 5V                                              |
 | GND                 | N/A      | 3,5          | 接地                                               |
-| RS232-RX            | 18       | 32           | RS232 RX(57600 bps, 8N1, SoftwareSerial)           |
-| RS232-TX            | 17       | 31           | RS232 TX(57600 bps, 8N1, 硬體 UART TXD)            |
+| RS232-RX            | 18       | 32           | RS232 RX(9600 bps, 8N1, SoftwareSerial)            |
+| RS232-TX            | 17       | 31           | RS232 TX(9600 bps, 8N1, 硬體 UART TXD)             |
 | Roll Gain           | 11       | 26           | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
 | Pitch Gain          | 12       | 27           | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
 | Yaw Gain            | 13       | 28           | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）     |
@@ -109,13 +109,15 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 > 硬體 UART 的 D0(RXD) 已釋出並停用（停 RX 中斷 + 內部上拉，免懸空雜訊）。
 > 硬體 UART 發送由 UDRE 中斷驅動、**不關中斷**，遙測輸出不會屏蔽命令接收；
 > SoftwareSerial 發送則逐字元關中斷（cli），是先前「命令時好時壞／延遲收到」的主因。
-> 鮑率 **57600**：8MHz SoftwareSerial RX 的可靠上限（139 週期/位元）；
-> 9600 雖位元較寬，但遙測一幀要 172ms，發送佔滿線路反而讓 RX 幾乎全盲。
+> 鮑率 **9600**：飛控板 RX 為 8MHz SoftwareSerial，實測僅 9600 能可靠收到命令；
+> 設 57600 時位元時間僅 ~104µs（8MHz 下約 139 週期）取樣跟不上 → 飛控收不到命令。
+> TX 已改硬體 UART（UDRE 中斷驅動、發送不關中斷），低速不再妨礙命令接收；
+> 遙測週期設 200ms（9600 下一幀約 160 位元組 ≈ 167ms），避免 TX 緩衝滿造成阻塞。
 > ISP 燒錄（PROISP）走 SPI 與 UART 無關，不受影響。
 
 ## 序列埠 JSON 協定
 
-鮑率 **57600 8N1**，每行一筆 JSON，以 `\n` 結尾。
+鮑率 **9600 8N1**，每行一筆 JSON，以 `\n` 結尾。
 
 ### 電腦 → 飛控板（控制命令）
 
@@ -171,7 +173,7 @@ python tools/kkbox_monitor.py --port COM3
 ## 無線傳輸架構（WT32-ETH01 接收機 + ESP32 D1 mini 遙控器）
 
 ```
-KK飛控板 ──序列埠(57600 8N1)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
+KK飛控板 ──序列埠(9600 8N1)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
    (Atmega168)            (有線+無線 網頁/WS)                          (OLED + 網頁模擬搖桿)
                                  │
                                  └── 瀏覽器 (有線或無線網頁，即時 WebSocket)
@@ -190,7 +192,7 @@ ESP32 D1 mini 遙控器 (網頁喬狀 / 模擬搖桿)
   ▼
 WT32-ETH01 接收機
    │ ② onWsEvent() 收到 { ... } → kkSendLog() → kkSend()
-   │    Serial2 RS232 (57600 8N1, GPIO5=RX / GPIO17=TX)，自動補 '\n'
+   │    Serial2 RS232 (9600 8N1, GPIO5=RX / GPIO17=TX)，自動補 '\n'
   ▼
 kkbox 飛控板 (ATmega168)
      readSerial() 逐行讀取 → handleCommand() 解析 JSON 執行

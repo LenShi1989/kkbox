@@ -15,10 +15,11 @@
  */
 #define RS232_RX_PIN 2   /* GPIO18 = PD2 = D2 (SoftwareSerial) */
 #define RS232_TX_PIN 1   /* GPIO17 = PD1 = D1 (硬體 UART TXD) */
-/* 57600: 8MHz SoftwareSerial RX 的可靠上限 (139 週期/位元);
- * 9600 雖位元更寬, 但遙測一幀要 172ms, 發送佔滿線路反而讓 RX 幾乎全盲。
- * 硬體 UART TX 於 57600 實測誤差約 2%, 可用 (原設計 115200 誤差 3.5%)。 */
-#define SERIAL_BAUD 57600
+/* 9600: 8MHz SoftwareSerial RX 實測只能可靠收到 9600 (設 57600 時飛控收不到命令)。
+ * 8MHz 下 57600 每位元僅 ~139 週期, 接收取樣跟不上; 9600 則有充裕餘裕。
+ * TX 已改硬體 UART (UDRE 中斷驅動, 發送不關中斷也不阻塞), 故低速不再妨礙命令接收。
+ * (115200 為原始設計值, 8MHz SoftwareSerial 無法勝任) */
+#define SERIAL_BAUD 9600
 
 /* ---------- 板載 LED1 ----------
  * 原理圖 LED1 = ATmega168 PB6 (GPIO6)。
@@ -120,8 +121,9 @@ static inline void ledWrite(uint8_t on) {
 
 /* ---------- 序列緩衝 (ATmega168 僅 1KB SRAM, 請勿任意放大) ---------- */
 #define LINE_BUF_SIZE   72
-/* 遙測 100ms: 57600 bps 下一幀 ~29ms; 50ms 間隔時 TX 佔空比 57%,
- * SoftwareSerial TX 期間 RX 幾乎全盲, 命令易被丟; 100ms 降至 ~29% */
-#define TEL_INTERVAL_MS 100
+/* 遙測週期 (ms), 0 = 關閉。9600 鮑率下一幀約 160 位元組 ≈ 167ms 傳輸時間;
+ * 設 200 保留約 2 成餘裕, 避免 Serial.print 因 TX 緩衝滿而長期阻塞、拖慢 PID 控制週期。
+ * TX 阻塞期間 RX 仍由硬體中斷收進緩衝, 不影響命令接收。 */
+#define TEL_INTERVAL_MS 200
 
 #endif
