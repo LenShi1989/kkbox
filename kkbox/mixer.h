@@ -4,42 +4,43 @@
 #include <Arduino.h>
 #include "config.h"
 
-/* 四軸混控; 輸出 (us) = 油門 + roll/pitch/yaw PID 修正量。
+/* 混控: 輸出 (us) = 油門 + roll/pitch/yaw PID 修正量。
+ * 支援執行中切換 4 槳 (Quad-X / Quad-+) 與 8 槳 (X8 同軸)。
  *
- * Quad-X 馬達配置 (機頭朝上):
+ * 4 槳 Quad-X (機頭朝上):
  *       M4(FL)        M1(FR)
  *            \  X  /
  *       M3(RL)        M2(RR)
  *
- * Quad-+ 馬達配置:
- *            M1(前)
- *       M4(左)    M2(右)
- *            M3(後)
+ * 8 槳 X8 同軸 (4 臂, 每臂上下兩顆反槳; 上槳 M1..M4, 下槳 M5..M8):
+ *   臂位與 4 槳相同; 同臂上下同 roll/pitch, yaw 反號 (反槳)。
  */
-#if MOTOR_COUNT != 4
-#error "mixer.h 目前僅支援 4 顆馬達 (MOTOR_COUNT == 4)"
-#endif
 
-static void mixerCompute(float thr, float roll, float pitch, float yaw,
-                         float out[MOTOR_COUNT]) {
+/* 每臂係數 [roll, pitch, yaw] (單一槳); int8 省 Flash */
 #if KK_FRAME == 0
-  static const float c[MOTOR_COUNT][3] = {
-    { -1.0f, -1.0f,  1.0f },  /* M1 FR */
-    {  1.0f, -1.0f, -1.0f },  /* M2 RR */
-    {  1.0f,  1.0f,  1.0f },  /* M3 RL */
-    { -1.0f,  1.0f, -1.0f }   /* M4 FL */
-  };
+static const int8_t MIX_ARM[4][3] = {
+  { -1, -1,  1 },  /* M1 FR */
+  {  1, -1, -1 },  /* M2 RR */
+  {  1,  1,  1 },  /* M3 RL */
+  { -1,  1, -1 }   /* M4 FL */
+};
 #else
-  static const float c[MOTOR_COUNT][3] = {
-    {  0.0f, -1.0f,  1.0f },  /* M1 前 */
-    { -1.0f,  0.0f, -1.0f },  /* M2 右 */
-    {  0.0f,  1.0f,  1.0f },  /* M3 後 */
-    {  1.0f,  0.0f, -1.0f }   /* M4 左 */
-  };
+static const int8_t MIX_ARM[4][3] = {
+  {  0, -1,  1 },  /* M1 前 */
+  { -1,  0, -1 },  /* M2 右 */
+  {  0,  1,  1 },  /* M3 後 */
+  {  1,  0, -1 }   /* M4 左 */
+};
 #endif
 
-  for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
-    out[i] = thr + c[i][0] * roll + c[i][1] * pitch + c[i][2] * yaw;
+/* 依 motorCount (4 或 8) 計算各馬達輸出 (us) */
+static void mixerCompute(uint8_t motorCount, float thr,
+                         float roll, float pitch, float yaw, float* out) {
+  uint8_t n = (motorCount == 8) ? 8 : 4;
+  for (uint8_t i = 0; i < n; i++) {
+    uint8_t a = i & 3;
+    float y = (i < 4) ? yaw : -yaw;   /* 同軸下槳 yaw 反號 */
+    out[i] = thr + MIX_ARM[a][0] * roll + MIX_ARM[a][1] * pitch + MIX_ARM[a][2] * y;
   }
 }
 

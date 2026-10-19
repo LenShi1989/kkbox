@@ -111,6 +111,7 @@ $('nav').addEventListener('click', (e) => {
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + a.dataset.page));
   if (a.dataset.page === 'network') loadNet();
   if (a.dataset.page === 'pid') loadPid();
+  if (a.dataset.page === 'motors') motorsTouched = false;
   if (a.dataset.page === 'user') loadUser();
 });
 
@@ -157,7 +158,66 @@ function applyTelemetry(t) {
   $('t-gp').textContent = t.gyro.pitch.toFixed(1);
   $('t-gy').textContent = t.gyro.yaw.toFixed(1);
   $('t-motor').textContent = (t.motor || []).join(' ');
+
+  if (t.set) updateGauge(t.set.thr);
+  if (t.motor) updatePie(t.motor);
+  $('f-armed').textContent = t.armed ? '解鎖' : '上鎖';
+  if (t.mcount !== undefined) {
+    $('f-mcount').textContent = t.mcount + ' 顆';
+    if (!motorsTouched) selectMcount(t.mcount);
+  }
+  $('f-hold').textContent = t.hold ? '開啟' : '關閉';
 }
+
+/* ---------- 飛行狀態 (油門儀表盤 / 馬達圓餅圖) ---------- */
+const MOTOR_COLORS = ['#37c2ff', '#3ddc84', '#ffcc4d', '#ff5b5b',
+                      '#b06bff', '#4de1c1', '#ff9f43', '#8ad6ff'];
+
+function updateGauge(thr) {
+  const v = Math.max(1000, Math.min(2000, Math.round(+thr || 0)));
+  const frac = (v - 1000) / 1000;
+  const fill = $('gauge-fill');
+  if (fill) fill.style.strokeDasharray = (frac * 100).toFixed(1) + ' 100';
+  $('gauge-needle').style.transform = 'rotate(' + (-90 + frac * 180).toFixed(1) + 'deg)';
+  $('gauge-thr').textContent = v;
+}
+
+function updatePie(motors) {
+  const pie = $('motor-pie');
+  if (!pie || !motors || !motors.length) return;
+  let total = 0;
+  for (const m of motors) total += m;
+  if (!total) total = 1;
+  let acc = 0, stops = [], html = '';
+  for (let i = 0; i < motors.length; i++) {
+    const c = MOTOR_COLORS[i % MOTOR_COLORS.length];
+    const a = acc / total * 360, b = (acc + motors[i]) / total * 360;
+    stops.push(c + ' ' + a.toFixed(2) + 'deg ' + b.toFixed(2) + 'deg');
+    acc += motors[i];
+    html += '<li><span class="sw" style="background:' + c + '"></span>M' + (i + 1) +
+            '<span class="mv">' + motors[i] + '</span></li>';
+  }
+  pie.style.background = 'conic-gradient(' + stops.join(',') + ')';
+  $('motor-legend').innerHTML = html;
+}
+
+let motorsTouched = false;
+function selectMcount(n) {
+  const el = document.querySelector('input[name=mcount][value="' + n + '"]');
+  if (el) el.checked = true;
+  $('motors-state').textContent = '目前：' + n + ' 顆';
+}
+document.querySelectorAll('input[name=mcount]').forEach(r =>
+  r.addEventListener('change', () => { motorsTouched = true; }));
+$('motors-apply').addEventListener('click', async () => {
+  const el = document.querySelector('input[name=mcount]:checked');
+  if (!el) { toast('請選擇馬達數', 'err'); return; }
+  try {
+    await api('/api/command', { method: 'POST', body: { cmd: JSON.stringify({ cmd: 'motors', count: +el.value }) } });
+    toast('已送出：' + el.value + ' 顆馬達');
+    motorsTouched = false;
+  } catch (e) { toast('送出失敗: ' + e.message, 'err'); }
+});
 
 async function loadFs() {
   let f;

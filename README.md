@@ -23,7 +23,7 @@
 | Motor 5 (M5)        | 22       | 10           | 第 5 號馬達 / 電子調速器（ESC）控制輸出            |
 | Motor 6 (M6)        | 21       | 9            | 第 6 號馬達 / 電子調速器（ESC）控制輸出            |
 | Motor 7 (M7)        | 19       | 1            | 第 7 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 8 (M8)        | 7        | 8            | 第 8 號馬達 / 電子調速器（ESC）控制輸出            |
+| Motor 8 (M8)        | 20       | 2            | 第 8 號馬達 / ESC 控制輸出 (D4/PD4；原 GPIO7/PB7=XTAL2 無法當 GPIO) |
 | LED1                | 6        | 7 板載LED1燈 |
 | ISP 燒錄器接腳(1)   | 4        | 16           | MISO                                               |
 | ISP 燒錄器接腳(2)   | N/A      | 4,6          | VCC 5V                                             |
@@ -53,7 +53,7 @@ kkbox/
 │   ├── config.h                  腳位對照與可調參數
 │   ├── pid.h                     PID 演算法
 │   ├── gyro.h                    三軸陀螺儀讀取 / 校正 / 濾波
-│   ├── mixer.h                   四軸混控 (自主平衡輸出)
+│   ├── mixer.h                   四軸 / 八軸 (X8 同軸) 混控
 │   └── jsonutil.h                輕量 JSON 解析 (無動態記憶體)
 ├── WT32_ETH01_receiver/          WT32-ETH01 接收機 (有線 RJ45 + WiFi 網頁)
 │   ├── WT32_ETH01_receiver.ino   主程式: 網路 + 飛控 UART 橋接
@@ -132,6 +132,8 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 {"cmd":"setpoints","roll":0,"pitch":0,"yaw":0}           // 角速率目標 (deg/s)
 {"cmd":"pid","axis":"roll","kp":3.0,"ki":0.0,"kd":8.0}
 {"cmd":"telemetry","value":50}                           // 遙測週期 ms, 0 = 關閉
+{"cmd":"motors","count":8}                               // 飛行模式: 馬達數 4 / 8 (8 = X8 同軸)
+{"cmd":"hold","on":1}                                    // 定高 (油門保持): 鎖定當前油門, on: 0/1
 ```
 
 ### 飛控板 → 電腦（遙測，含三軸陀螺儀資料）
@@ -141,13 +143,26 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
   "t": 12345,
   "armed": 1,
   "led": 0,
+  "mcount": 4,
+  "hold": 0,
   "gyro": { "roll": 1.23, "pitch": -4.56, "yaw": 0.78 },
   "set": { "roll": 0.0, "pitch": 0.0, "yaw": 0.0, "thr": 1300 },
   "motor": [1420, 1380, 1460, 1350]
 }
 ```
 
+`mcount` 為目前馬達數 (4 或 8)，`motor` 陣列長度隨之 (8 顆時為 `[M1..M8]`)；`hold` 為定高 (油門保持) 狀態。
+
 回應命令時回傳 `{"ack":"..."}`；解鎖狀態下若 2 秒內未收到任何命令會回報 `{"evt":"failsafe"}` 並自動上鎖。
+
+## 馬達模式 (4 / 8) 與定高
+
+- **馬達模式**：開機預設 4 槳，可用 `{"cmd":"motors","count":8}` 執行中切換為 8 槳 (X8 同軸)。
+  - 4 槳：Quad-X（`KK_FRAME=0`，預設）或 Quad-+（`KK_FRAME=1`，編譯期）。
+  - 8 槳 X8 同軸：4 臂、每臂上下兩顆反槳；上槳 M1~M4 與 4 槳臂位相同，下槳 M5~M8 與同臂上槳同 roll/pitch、yaw 反號。
+  - M8 於本板改接 **D4（PD4 / GPIO20）**；原 docs 的 M8=GPIO7(PB7/XTAL2) 無法當 GPIO。切換後 Servo 會重新掛載，建議於解鎖前設定。
+- **定高（油門保持）**：`{"cmd":"hold","on":1}` 鎖定當下油門，之後的 `throttle` 命令一律忽略，直到 `{"cmd":"hold","on":0}`；`arm`/`disarm` 會自動清除。本板無高度感測器，故屬「定油門」而非真正的定高。
+- **資源**：kkbox 韌體約 14134 B（98% Flash）、RAM 約 814 B（79%）——ATmega168 已接近上限，新增功能務必留意空間。
 
 ## 遠端控制板載 LED1 測試
 
@@ -219,7 +234,7 @@ kkbox 飛控板 (ATmega168)
 
 - 開發板：`esp32:esp32:wt32-eth01`（Arduino IDE：`WT32-ETH01 Ethernet Module`）
 - 功能：RJ45（LAN8720A）+ WiFi、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
-- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**PID 設定**、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
+- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**PID 設定**、**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
 
 | WT32-ETH01  | 連接對象          | 說明                            |
 | ----------- | ----------------- | ------------------------------- |
@@ -234,8 +249,8 @@ kkbox 飛控板 (ATmega168)
 
 - 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`）
 - **分區請選 `Minimal SPIFFS (Large APPS with OTA)`**（程式約 1.26MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
-- 功能：WiFi 連線、以 WebSocket 連接收收機、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、OTA、登入。
-- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**模擬搖桿**、**OTA 更新**、**使用者設定**。
+- 功能：WiFi 連線、以 WebSocket 連接收收機、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、**定高控制 (油門保持)**、OTA、登入。
+- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**模擬搖桿**（含定高切換）、**OTA 更新**、**使用者設定**。
 
 | ESP32 D1 mini | 連接對象          | 說明     |
 | ------------- | ----------------- | -------- |

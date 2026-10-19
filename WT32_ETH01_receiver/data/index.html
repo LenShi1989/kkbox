@@ -32,6 +32,8 @@
       <div class="nav-group">
         <div class="nav-label">KKBOX 飛控管理</div>
         <a data-page="pid">PID 設定</a>
+        <a data-page="motors">馬達模式切換</a>
+        <a data-page="flight">飛行狀態</a>
         <a data-page="serial">RS232 串口通訊</a>
       </div>
       <a data-page="ota">OTA 更新</a>
@@ -168,10 +170,59 @@
       </div>
     </section>
 
+    <!-- 馬達模式切換 -->
+    <section id="page-motors" class="page">
+      <h2>馬達模式切換</h2>
+      <p class="muted">切換飛控板的飛行模式 (馬達數量)。切換時飛控板會重新掛載 ESC 輸出，建議於解鎖前設定。</p>
+      <div class="card">
+        <label class="inline"><input type="radio" name="mcount" value="4"> 4 顆馬達 (Quad-X)</label>
+        <label class="inline"><input type="radio" name="mcount" value="8"> 8 顆馬達 (X8 同軸)</label>
+        <div class="row">
+          <button id="motors-apply">套用</button>
+          <span class="muted" id="motors-state">目前：-</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 飛行狀態 -->
+    <section id="page-flight" class="page">
+      <h2>飛行狀態</h2>
+      <table class="tbl">
+        <tbody>
+          <tr><th>解鎖</th><td id="f-armed">-</td></tr>
+          <tr><th>馬達數</th><td id="f-mcount">-</td></tr>
+          <tr><th>定高 (油門保持)</th><td id="f-hold">-</td></tr>
+        </tbody>
+      </table>
+
+      <h3>油門 PWM</h3>
+      <div class="card">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 128" class="gauge" aria-label="油門 PWM">
+            <path class="gauge-arc" d="M20 110 A80 80 0 0 1 180 110"></path>
+            <path id="gauge-fill" class="gauge-fill" pathLength="100" d="M20 110 A80 80 0 0 1 180 110"></path>
+            <line id="gauge-needle" class="gauge-needle" x1="100" y1="110" x2="100" y2="38"></line>
+            <circle cx="100" cy="110" r="6" class="gauge-hub"></circle>
+            <text x="16" y="126" class="gauge-lab">1000</text>
+            <text x="158" y="126" class="gauge-lab">2000</text>
+          </svg>
+          <div class="gauge-val"><span id="gauge-thr">-</span><span class="unit">µs</span></div>
+        </div>
+      </div>
+
+      <h3>馬達 PWM 轉速</h3>
+      <div class="card">
+        <div class="pie-wrap">
+          <div id="motor-pie" class="pie"></div>
+          <ul id="motor-legend" class="motor-legend"></ul>
+        </div>
+      </div>
+    </section>
+
     <!-- RS232 串口通訊 -->
     <section id="page-serial" class="page">
       <h2>RS232 串口通訊</h2>
-      <p class="muted">即時監控接收機與飛控板之間 (Serial2, 57600 8N1) 的 JSON 字串。
+      <p class="muted">即時監控接收機與飛控板之間 (Serial2, 9600 8N1) 的 JSON 字串。
         TX＝接收機轉送至飛控板（含 PID 下傳與 WebSocket 命令）；RX＝飛控板回傳（遙測 / ack / evt / err）。</p>
       <div class="card">
         <div class="row ser-bar">

@@ -146,6 +146,7 @@ function applyTelemetry(t) {
   $('t-gy').textContent = t.gyro.yaw.toFixed(1);
   $('t-motor').textContent = (t.motor || []).join(' ');
   $('joy-state').textContent = t.armed ? '已解鎖 (ARMED)' : '已連線 (待命)';
+  if (t.hold !== undefined) setHold(!!t.hold);
 }
 
 async function loadFs() {
@@ -291,6 +292,7 @@ $('u-save').addEventListener('click', async () => {
 const RANGE = 200;          /* 角速率滿刻度 deg/s */
 let joyRoll = 0, joyPitch = 0, joyYaw = 0, joyThr = 1000, dirty = false;
 let armedNow = false;
+let holdOn = false;
 const pad = $('pad'), knob = $('knob');
 let dragging = false;
 
@@ -332,6 +334,17 @@ $('joy-yaw').addEventListener('input', (e) => { joyYaw = +e.target.value; $('joy
 $('btn-arm').addEventListener('click', () => sendOnce({ cmd: 'arm' }));
 $('btn-disarm').addEventListener('click', () => sendOnce({ cmd: 'disarm' }));
 $('btn-cal').addEventListener('click', () => sendOnce({ cmd: 'calibrate' }));
+
+/* 定高 (油門保持): 鎖定飛控板當前油門, 無高度感測器 */
+function setHold(on) {
+  holdOn = on;
+  const b = $('btn-hold');
+  if (b) { b.textContent = '定高：' + (on ? '開' : '關'); b.classList.toggle('danger', on); }
+}
+$('btn-hold').addEventListener('click', () => {
+  setHold(!holdOn);
+  sendOnce({ cmd: 'hold', on: holdOn ? 1 : 0 });
+});
 document.querySelectorAll('[data-led]').forEach(b =>
   b.addEventListener('click', () => sendOnce({ cmd: 'led', mode: b.dataset.led })));
 

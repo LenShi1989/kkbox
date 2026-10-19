@@ -223,3 +223,22 @@ html[data-theme="glass"] .login-overlay{background-image:var(--bg-image);backgro
   .theme-switch{padding:4px}
   .theme-btn{font-size:11px;padding:6px 8px}
 }
+
+/* ---------- 飛行狀態: 油門儀表盤 / 馬達圓餅圖 ---------- */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.gauge{width:260px;max-width:100%;height:auto}
+.gauge-arc{fill:none;stroke:var(--line);stroke-width:12;stroke-linecap:round}
+.gauge-fill{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;stroke-dasharray:0 100;transition:stroke-dasharray .15s linear}
+.gauge-needle{stroke:var(--err);stroke-width:3;stroke-linecap:round;transform-origin:100px 110px;transition:transform .15s linear}
+.gauge-hub{fill:var(--fg)}
+.gauge-lab{fill:var(--muted);font-size:11px}
+.gauge-val{font-size:26px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+.gauge-val .unit{font-size:13px;color:var(--muted);margin-left:4px}
+
+.pie-wrap{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center}
+.pie{width:180px;height:180px;border-radius:50%;border:1px solid var(--line);flex:0 0 auto;transition:background .15s linear}
+.motor-legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px 14px}
+.motor-legend li{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg);font-variant-numeric:tabular-nums}
+.motor-legend .sw{width:12px;height:12px;border-radius:3px;flex:0 0 auto}
+.motor-legend .mv{margin-left:auto;color:var(--muted)}
+

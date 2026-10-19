@@ -75,12 +75,15 @@ static inline void ledWrite(uint8_t on) {
 #define GAIN_YAW_PIN   A5
 
 /* ---------- 馬達 / ESC 輸出 ----------
+ * 開機預設 4 槳 (MOTOR_COUNT=4), 可執行中以命令切換為 8 槳 (X8 同軸)。
  * GPIO 對照: M1=GPIO2  M2=GPIO1  M3=GPIO0  M4=GPIO23
- *             M5=GPIO22 M6=GPIO21 M7=GPIO19 M8=GPIO7
+ *             M5=GPIO22 M6=GPIO21 M7=GPIO19 M8=GPIO20
  * 轉 Arduino pin: M1=D10(PB2) M2=D9(PB1) M3=D8(PB0)
- *                 M4=D7(PD7)  M5=D6(PD6) M6=D5(PD5) M7=D3(PD3)
+ *                 M4=D7(PD7)  M5=D6(PD6) M6=D5(PD5) M7=D3(PD3) M8=D4(PD4)
+ * 註: 原 docs 的 M8=GPIO7(PB7/XTAL2) 於本板無法當 GPIO, 故 M8 改接 D4。
  */
-#define MOTOR_COUNT 4
+#define MOTOR_COUNT 4        /* 開機預設馬達數 (4 或 8) */
+#define MAX_MOTORS  8        /* Servo 陣列上限 (勿超過 Servo 函式庫上限) */
 #define MOTOR1_PIN 10
 #define MOTOR2_PIN  9
 #define MOTOR3_PIN  8
@@ -88,7 +91,7 @@ static inline void ledWrite(uint8_t on) {
 #define MOTOR5_PIN  6
 #define MOTOR6_PIN  5
 #define MOTOR7_PIN  3
-#define MOTOR8_PIN  7   /* M8=GPIO7=PB7, Arduino 無對應腳位(需直接埠操作); MOTOR_COUNT=4 時未使用 */
+#define MOTOR8_PIN  4
 
 #define ESC_MIN 1000
 #define ESC_MAX 2000

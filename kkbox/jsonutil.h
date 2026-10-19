@@ -33,9 +33,23 @@ static long jInt(const char* json, const char* key, long def) {
   return p ? strtol(p, 0, 10) : def;
 }
 
+/* 取代 strtod: avr-libc 的 strtod 會佔用約 700B Flash, 對 ATmega168 太貴。
+ * 自行解析 [+-]整數[.小數] (最多 4 位小數), 足夠本專案 PID/設定點使用。 */
 static float jFloat(const char* json, const char* key, float def) {
   const char* p = jFind(json, key);
-  return p ? (float)strtod(p, 0) : def;
+  if (!p) return def;
+  uint8_t neg = 0;
+  if (*p == '-') { neg = 1; p++; }
+  else if (*p == '+') p++;
+  long ip = 0;
+  while (*p >= '0' && *p <= '9') ip = ip * 10 + (*p++ - '0');
+  long fp = 0, div = 1;
+  if (*p == '.') {
+    p++;
+    while (*p >= '0' && *p <= '9') { fp = fp * 10 + (*p++ - '0'); div *= 10; }
+  }
+  float v = (float)ip + (float)fp / (float)div;
+  return neg ? -v : v;
 }
 
 static bool jStr(const char* json, const char* key, char* out, size_t n) {

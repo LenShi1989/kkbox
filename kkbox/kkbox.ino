@@ -30,7 +30,7 @@ static const uint8_t MOTOR_PINS[8] = {
   MOTOR5_PIN, MOTOR6_PIN, MOTOR7_PIN, MOTOR8_PIN
 };
 
-Servo esc[MOTOR_COUNT];
+Servo esc[MAX_MOTORS];
 /* RX=SoftwareSerial(D2); TX 不使用 SoftwareSerial, 改走硬體 UART TXD (PD1 同腳) */
 SoftwareSerial rs232(RS232_RX_PIN, RS232_TX_PIN);   /* 參數順序: RX, TX */
 Gyro  gyro;
@@ -42,6 +42,8 @@ float setPitch = 0.0f;
 float setYaw   = 0.0f;
 long  throttleUs = ESC_MIN;
 bool  armed = false;
+bool  hold  = false;         /* 定高 (油門保持): 鎖定當前油門 */
+uint8_t motorCount = MOTOR_COUNT;
 
 uint8_t  ledMode = 2;                 /* 0=off 1=on 2=blink */
 uint8_t  ledValue = 0;
@@ -52,7 +54,22 @@ uint32_t lastTelMs  = 0;
 uint32_t lastCmdMs  = 0;
 uint32_t lastLedMs  = 0;
 
-float motorUs[MOTOR_COUNT];
+float motorUs[MAX_MOTORS];
+
+/* 依馬達數掛載/卸載 Servo, 可執行中切換 4 / 8 (X8 同軸) */
+static void attachMotors(uint8_t count) {
+  if (count != 8) count = 4;
+  for (uint8_t i = 0; i < MAX_MOTORS; i++) {
+    if (i < count) {
+      if (!esc[i].attached()) esc[i].attach(MOTOR_PINS[i]);
+      esc[i].writeMicroseconds(ESC_MIN);
+      motorUs[i] = ESC_MIN;
+    } else if (esc[i].attached()) {
+      esc[i].detach();
+    }
+  }
+  motorCount = count;
+}
 
 char    lineBuf[LINE_BUF_SIZE];
 uint8_t lineLen = 0;
@@ -80,9 +97,9 @@ static void controlStep(float dt) {
   }
 
   float thr = armed ? (float)throttleUs : (float)ESC_MIN;
-  mixerCompute(thr, rOut, pOut, yOut, motorUs);
+  mixerCompute(motorCount, thr, rOut, pOut, yOut, motorUs);
 
-  for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
+  for (uint8_t i = 0; i < motorCount; i++) {
     float v = motorUs[i];
     if (v < ESC_MIN) v = ESC_MIN;
     if (v > ESC_MAX) v = ESC_MAX;
@@ -124,6 +141,8 @@ static void sendTelemetry() {
   Serial.print(F("{\"t\":"));               Serial.print(now);
   Serial.print(F(",\"armed\":"));           Serial.print(armed);
   Serial.print(F(",\"led\":"));             Serial.print(ledValue);
+  Serial.print(F(",\"mcount\":"));          Serial.print(motorCount);
+  Serial.print(F(",\"hold\":"));            Serial.print(hold);
 
   /* 數值一律以整數輸出: 省下 ATmega168 昂貴的浮點列印程式碼 (省下約 1KB Flash) */
   Serial.print(F(",\"gyro\":{\"roll\":"));  Serial.print((int)gyroNow.roll);
@@ -136,7 +155,7 @@ static void sendTelemetry() {
   Serial.print(F(",\"thr\":"));             Serial.print(throttleUs);
 
   Serial.print(F("},\"motor\":["));
-  for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
+  for (uint8_t i = 0; i < motorCount; i++) {
     if (i) Serial.print(',');
     Serial.print((int)(motorUs[i] + 0.5f));
   }
@@ -175,11 +194,13 @@ static void handleCommand(const char* s) {
 
   } else if (!strcmp(cmd, "arm")) {
     throttleUs = ESC_MIN;
+    hold = false;
     armed = true;
     ackCmd("arm");
 
   } else if (!strcmp(cmd, "disarm")) {
     armed = false;
+    hold = false;
     ackCmd("disarm");
 
   } else if (!strcmp(cmd, "calibrate")) {
@@ -190,8 +211,16 @@ static void handleCommand(const char* s) {
     long v = jInt(s, "value", throttleUs);
     if (v < ESC_MIN) v = ESC_MIN;
     if (v > ESC_MAX) v = ESC_MAX;
-    throttleUs = v;
+    if (!hold) throttleUs = v;   /* 定高中: 保持當前油門, 忽略變更 */
     ackCmd("throttle");
+
+  } else if (!strcmp(cmd, "hold")) {
+    hold = jInt(s, "on", 0) ? true : false;
+    ackCmd("hold");
+
+  } else if (!strcmp(cmd, "motors")) {
+    attachMotors((uint8_t)jInt(s, "count", motorCount));
+    ackCmd("motors");
 
   } else if (!strcmp(cmd, "setpoints")) {
     setRoll  = jFloat(s, "roll",  setRoll);
@@ -219,6 +248,10 @@ static void handleCommand(const char* s) {
     Serial.print(throttleUs);
     Serial.print(F(",\"tel\":"));
     Serial.print(telIntervalMs);
+    Serial.print(F(",\"mcount\":"));
+    Serial.print(motorCount);
+    Serial.print(F(",\"hold\":"));
+    Serial.print(hold);
     Serial.println(F("}"));
 
   } else {
@@ -253,11 +286,7 @@ void setup() {
   readSerial();             /* 清掉開機瞬間的殘留位元組 */
   ledInit();
 
-  for (uint8_t i = 0; i < MOTOR_COUNT; i++) {
-    esc[i].attach(MOTOR_PINS[i]);
-    esc[i].writeMicroseconds(ESC_MIN);
-    motorUs[i] = ESC_MIN;
-  }
+  attachMotors(MOTOR_COUNT);
 
   pidRoll.setTunings(PID_ROLL_KP, PID_ROLL_KI, PID_ROLL_KD);
   pidPitch.setTunings(PID_PITCH_KP, PID_PITCH_KI, PID_PITCH_KD);
