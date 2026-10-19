@@ -47,8 +47,8 @@ static String btEsc(const String& s) {
 }
 
 /* ---------- 掃描回呼 ---------- */
-class BtScanCB : public NimBLEAdvertisedDeviceCallbacks {
-  void onResult(NimBLEAdvertisedDevice* dev) override {
+class BtScanCB : public NimBLEScanCallbacks {
+  void onResult(const NimBLEAdvertisedDevice* dev) override {
     if (!dev) return;
     std::string nms = dev->haveName() ? dev->getName() : std::string("");
     String nm = String(nms.c_str());
@@ -74,10 +74,11 @@ class BtScanCB : public NimBLEAdvertisedDeviceCallbacks {
     gBtDevs[gBtDevCount].rssi = dev->getRSSI();
     gBtDevCount++;
   }
+  void onScanEnd(const NimBLEScanResults& results, int reason) override {
+    gBtScanning = false;
+  }
 };
 static BtScanCB btScanCB;
-
-static void btScanEndCB(NimBLEScanResults results) { gBtScanning = false; }
 
 /* ---------- 通知 (遙測 / ack) 回呼 ---------- */
 static void btNotifyCB(NimBLERemoteCharacteristic* chr, uint8_t* data,
@@ -91,7 +92,7 @@ static void btNotifyCB(NimBLERemoteCharacteristic* chr, uint8_t* data,
 
 /* ---------- 連線回呼 ---------- */
 class BtClientCB : public NimBLEClientCallbacks {
-  void onDisconnect(NimBLEClient* c) override {
+  void onDisconnect(NimBLEClient* c, int reason) override {
     gBtUp = false;
     gBtCmdChr = nullptr;
     gBtTelChr = nullptr;
@@ -106,7 +107,7 @@ static inline void btScanStart() {
   gBtScanning = true;
   NimBLEScan* scan = NimBLEDevice::getScan();
   scan->clearResults();
-  scan->start(5, btScanEndCB, false);   /* 5 秒, 非阻塞 */
+  scan->start(5000, false, true);       /* 5 秒, 非阻塞 */
 }
 static inline void btScanStop() {
   NimBLEDevice::getScan()->stop();
@@ -121,7 +122,7 @@ static bool btConnectNow(const NimBLEAddress& addr) {
   if (!gBtClient) {
     gBtClient = NimBLEDevice::createClient();
     gBtClient->setClientCallbacks(&btClientCB, false);
-    gBtClient->setConnectTimeout(5);
+    gBtClient->setConnectTimeout(5000);
     gBtClient->setConnectionParams(12, 12, 0, 51);
   }
   gBtLastErr = "";
@@ -181,7 +182,7 @@ static inline void btClear() {
 /* 送出控制命令 (RC -> 接收機) */
 static inline void btSend(const String& cmd) {
   if (!gBtUp || !gBtCmdChr) return;
-  gBtCmdChr->writeValue(cmd.c_str(), true);
+  gBtCmdChr->writeValue(cmd.c_str(), cmd.length(), true);
 }
 
 static String btScanJson() {
@@ -198,10 +199,10 @@ static String btScanJson() {
 
 static inline void btBegin() {
   NimBLEDevice::init(btDevName().c_str());
-  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+  NimBLEDevice::setPowerLevel(ESP_PWR_LVL_P9);
   NimBLEDevice::setMTU(517);
   NimBLEScan* scan = NimBLEDevice::getScan();
-  scan->setAdvertisedDeviceCallbacks(&btScanCB, false);
+  scan->setScanCallbacks(&btScanCB, false);
   scan->setActiveScan(true);
   scan->setInterval(100);
   scan->setWindow(80);

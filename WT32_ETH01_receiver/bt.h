@@ -27,15 +27,13 @@ static uint32_t gBtRxLines   = 0;
 static void btOnLine(const String& msg);
 
 class BtServerCB : public NimBLEServerCallbacks {
-  void onConnect(NimBLEServer* s) override {
-    gBtConnected = true;
+  void onConnect(NimBLEServer* s, NimBLEConnInfo& info) override {
+    gBtConnected  = true;
+    gBtConnHandle = info.getConnHandle();
     gBtConnCount++;
     Serial.println("[BLE] 客戶端已連線");
   }
-  void onConnect(NimBLEServer* s, ble_gap_conn_desc* desc) override {
-    gBtConnHandle = desc->conn_handle;
-  }
-  void onDisconnect(NimBLEServer* s) override {
+  void onDisconnect(NimBLEServer* s, NimBLEConnInfo& info, int reason) override {
     gBtConnected = false;
     gBtConnHandle = 0xFFFF;
     Serial.println("[BLE] 客戶端已斷線, 重新廣播");
@@ -44,7 +42,7 @@ class BtServerCB : public NimBLEServerCallbacks {
 };
 
 class BtCmdCB : public NimBLECharacteristicCallbacks {
-  void onWrite(NimBLECharacteristic* c) override {
+  void onWrite(NimBLECharacteristic* c, NimBLEConnInfo& info) override {
     NimBLEAttValue v = c->getValue();
     if (v.length() == 0) return;
     String msg((const char*)v.data(), v.length());
@@ -57,7 +55,7 @@ class BtCmdCB : public NimBLECharacteristicCallbacks {
 
 static inline void btBegin() {
   NimBLEDevice::init(btName().c_str());
-  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+  NimBLEDevice::setPowerLevel(ESP_PWR_LVL_P9);
   NimBLEDevice::setMTU(517);              /* 允許較長遙測 / 命令 */
   gBtServer = NimBLEDevice::createServer();
   gBtServer->setCallbacks(new BtServerCB());
@@ -68,11 +66,12 @@ static inline void btBegin() {
   gBtCmdChr->setCallbacks(new BtCmdCB());
   gBtTelChr = svc->createCharacteristic(BLE_TEL_UUID,
                 NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
-  svc->start();
+  gBtServer->start();
 
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
+  adv->enableScanResponse(true);
+  adv->setName(btName().c_str());
   adv->addServiceUUID(BLE_SVC_UUID);
-  adv->setScanResponse(true);
   adv->start();
   Serial.printf("[BLE] 伺服器啟動: %s\n", btName().c_str());
 }
