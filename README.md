@@ -87,19 +87,19 @@ kkbox/
 
 GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 
-| 功能                | GPIO     | 埠          | Arduino   | 說明                   |
-| ------------------- | -------- | ----------- | --------- | ---------------------- |
+| 功能                | GPIO     | 埠          | Arduino   | 說明                          |
+| ------------------- | -------- | ----------- | --------- | ----------------------------- |
 | RS232 RX            | 18       | PD2         | D2        | 軟體 UART RX (SoftwareSerial) |
 | RS232 TX            | 17       | PD1         | D1        | 軟體 UART TX (SoftwareSerial) |
-| 陀螺儀 Yaw          | 8        | ADC0        | A0        | 壓電陀螺儀             |
-| 陀螺儀 Pitch        | 9        | ADC1        | A1        | 壓電陀螺儀             |
-| 陀螺儀 Roll         | 10       | ADC2        | A2        | 壓電陀螺儀             |
-| Roll/Pitch/Yaw Gain | 11/12/13 | ADC3/4/5    | A3/A4/A5  | 可變電阻（預設停用）   |
-| M1 / M2 / M3        | 2/1/0    | PB2/PB1/PB0 | D10/D9/D8 | ESC 輸出               |
-| M4 / M5 / M6        | 23/22/21 | PD7/PD6/PD5 | D7/D6/D5  | ESC 輸出               |
-| M7                  | 19       | PD3         | D3        | ESC 輸出               |
-| M8                  | 7        | PB7         | (XTAL2)   | 僅內建振盪器時可用     |
-| LED1                | 6        | PB6         | (XTAL1)   | 板載 LED，用直接埠控制 |
+| 陀螺儀 Yaw          | 8        | ADC0        | A0        | 壓電陀螺儀                    |
+| 陀螺儀 Pitch        | 9        | ADC1        | A1        | 壓電陀螺儀                    |
+| 陀螺儀 Roll         | 10       | ADC2        | A2        | 壓電陀螺儀                    |
+| Roll/Pitch/Yaw Gain | 11/12/13 | ADC3/4/5    | A3/A4/A5  | 可變電阻（預設停用）          |
+| M1 / M2 / M3        | 2/1/0    | PB2/PB1/PB0 | D10/D9/D8 | ESC 輸出                      |
+| M4 / M5 / M6        | 23/22/21 | PD7/PD6/PD5 | D7/D6/D5  | ESC 輸出                      |
+| M7                  | 19       | PD3         | D3        | ESC 輸出                      |
+| M8                  | 7        | PB7         | (XTAL2)   | 僅內建振盪器時可用            |
+| LED1                | 6        | PB6         | (XTAL1)   | 板載 LED，用直接埠控制        |
 
 > 注意：LED1 (PB6) 與 M8 (PB7) 是標準 Arduino 的晶體腳。本板使用內建振盪器才可當 GPIO；
 > 若外接晶體，請在 `config.h` 將 `LED1_DIRECT` 設為 0 並改用其他腳位。
@@ -195,14 +195,14 @@ KK飛控板 ──序列埠(115200, SoftwareSerial)── WT32-ETH01 接收機 �
 
 - 開發板：`esp32:esp32:wt32-eth01`（Arduino IDE：`WT32-ETH01 Ethernet Module`）
 - 功能：RJ45（LAN8720A）+ WiFi、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
-- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**PID 設定**、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
+- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**PID 設定**、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
 
-| WT32-ETH01  | 連接對象        | 說明                            |
-| ----------- | --------------- | ------------------------------- |
-| GPIO5 (RX)  | KKBOX RS232-TX  | 5V→3.3V 位準轉換                |
-| GPIO17 (TX) | KKBOX RS232-RX  | 3.3V→5V 位準轉換                |
-| GND         | KKBOX GND       | 務必共地                        |
-| RJ45        | 路由器 / 交換器 | 有線網路（可用 DHCP 或固定 IP） |
+| WT32-ETH01  | 連接對象          | 說明                            |
+| ----------- | ----------------- | ------------------------------- |
+| GPIO5 (RX)  | KKBOX RS232-TX 17 | 5V→3.3V 位準轉換                |
+| GPIO17 (TX) | KKBOX RS232-RX 18 | 3.3V→5V 位準轉換                |
+| GND         | KKBOX GND         | 務必共地                        |
+| RJ45        | 路由器 / 交換器   | 有線網路（可用 DHCP 或固定 IP） |
 
 > RJ45（LAN8720A）使用 GPIO16(RST)/18(MDIO)/23(MDC) 與 GPIO0 時脈輸入，已於 `config.h` 設定。
 
@@ -244,6 +244,7 @@ Y   0.8        1460
 
 - 接收機：`/ws`（瀏覽器與遙控器皆連此）。連線可帶 `?token=<Session或裝置Token>`，或使用登入 cookie。
 - 接收機把飛控板每行 JSON **原樣廣播**給所有用戶端；用戶端送出的 JSON 會**原樣轉送**飛控板。
+- 接收機轉送命令時另廣播監控幀 `{"ser":{"dir":"tx","data":"<命令字串>"}}`；「RS232 串口通訊」頁以此顯示 TX，並把收到的原始行顯示為 RX。
 - 遙控器：`/ws` 供其網頁喬狀使用；遙控器同時是接收機的 WebSocket 用戶端，會把遙測轉發給本地網頁、把喬狀命令轉送接收機。
 
 控制命令（飛控板 JSON 協定，經 WebSocket/HTTP 傳送）：
@@ -372,6 +373,9 @@ USB裝置:
 `https://github.com/gen-so/PROGISP-V1.72`
 
 ## Arduino IDE
+
+- Arduino IDE, 開啟 `kkbox/kkbox.ino`
+- 開發板: `Arduino Pro or Pro Mini` → `ATmega168 (3.3V, 8MHz)`
 
 - 匯出已編譯的二進位檔
   - Blink.ino.eightanaloginputs.hex

@@ -182,8 +182,13 @@ function connectWs() {
   ws.onmessage = (ev) => {
     try {
       const m = JSON.parse(ev.data);
+      if (m.ser) { serLog(m.ser.dir === 'tx' ? 'tx' : 'rx', m.ser.data); return; }
+      if (m.hello) return;
+      serLog('rx', ev.data);
       if (m.gyro) applyTelemetry(m);
-    } catch (e) {}
+    } catch (e) {
+      serLog('rx', ev.data);
+    }
   };
   ws.onclose = () => { ws = null; setTimeout(() => { if (!$('app').classList.contains('hidden')) connectWs(); }, 3000); };
 }
@@ -269,6 +274,65 @@ $('pid-save').addEventListener('click', async () => {
     toast('PID 已儲存並下傳飛控板');
   } catch (e) { toast('儲存失敗: ' + e.message, 'err'); }
 });
+
+/* ---------- RS232 串口監控 ---------- */
+const SER_MAX = 400;               /* 顯示上限行數 */
+let serPaused = false;
+let serCount = { tx: 0, rx: 0 };
+
+function serTs() {
+  const d = new Date();
+  const p = (n, w) => String(n).padStart(w || 2, '0');
+  return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) +
+         '.' + p(d.getMilliseconds(), 3);
+}
+
+function serLog(dir, text) {
+  serCount[dir]++;
+  $('ser-tx-n').textContent = serCount.tx;
+  $('ser-rx-n').textContent = serCount.rx;
+  if (serPaused) return;
+
+  const box = $('ser-log');
+  const near = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  const line = document.createElement('div');
+  line.className = 'ser-line ' + dir;
+  const ts = document.createElement('span');
+  ts.className = 'ser-ts';
+  ts.textContent = serTs();
+  const badge = document.createElement('span');
+  badge.className = 'ser-badge';
+  badge.textContent = dir.toUpperCase();
+  const body = document.createElement('span');
+  body.className = 'ser-text';
+  body.textContent = text;
+  line.append(ts, badge, body);
+  box.appendChild(line);
+
+  while (box.children.length > SER_MAX) box.removeChild(box.firstChild);
+  $('ser-show-n').textContent = box.children.length;
+  if ($('ser-auto').checked && near) box.scrollTop = box.scrollHeight;
+}
+
+$('ser-pause').addEventListener('click', () => {
+  serPaused = !serPaused;
+  $('ser-pause').textContent = serPaused ? '繼續' : '暫停';
+});
+$('ser-clear').addEventListener('click', () => {
+  $('ser-log').innerHTML = '';
+  $('ser-show-n').textContent = '0';
+});
+
+function serSend() {
+  const cmd = $('ser-input').value.trim();
+  if (!cmd) return;
+  if (cmd[0] !== '{') { toast('需為 JSON 字串，例如 {"cmd":"ping"}', 'err'); return; }
+  api('/api/command', { method: 'POST', body: { cmd } })
+    .then(() => { $('ser-input').value = ''; })   /* TX 由 WebSocket ser 帧回報顯示 */
+    .catch((e) => toast('送出失敗: ' + e.message, 'err'));
+}
+$('ser-send').addEventListener('click', serSend);
+$('ser-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') serSend(); });
 
 /* ---------- 使用者 ---------- */
 async function loadUser() {

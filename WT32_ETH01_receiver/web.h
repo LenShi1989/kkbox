@@ -127,6 +127,24 @@ static String arg(AsyncWebServerRequest* r, const char* name, const char* def = 
 }
 
 /* ================= WebSocket 事件 ================= */
+static String jsonEscape(const String& s) {
+  String o;
+  o.reserve(s.length() + 8);
+  for (unsigned i = 0; i < s.length(); i++) {
+    char c = s[i];
+    if (c == '"' || c == '\\') { o += '\\'; o += c; }
+    else if ((uint8_t)c < 0x20) o += ' ';
+    else o += c;
+  }
+  return o;
+}
+
+/* 送出命令並廣播串口監控幀 (網頁 RS232 串口通訊頁即時顯示 TX) */
+static inline void kkSendLog(const String& s) {
+  kkSend(s);
+  ws.textAll("{\"ser\":{\"dir\":\"tx\",\"data\":\"" + jsonEscape(s) + "\"}}");
+}
+
 static void onWsEvent(AsyncWebSocket* s, AsyncWebSocketClient* c,
                       AwsEventType type, void* arg, uint8_t* data, size_t len) {
   if (type == WS_EVT_CONNECT) {
@@ -136,7 +154,7 @@ static void onWsEvent(AsyncWebSocket* s, AsyncWebSocketClient* c,
     AwsFrameInfo* info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
       String msg = String((char*)data).substring(0, len);
-      if (msg.startsWith("{")) kkSend(msg);   /* 控制命令直通飛控板 */
+      if (msg.startsWith("{")) kkSendLog(msg);   /* 控制命令直通飛控板 */
     }
   }
 }
@@ -184,7 +202,7 @@ static void webSetup() {
   server.on("/api/command", HTTP_POST, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;
     String cmd = arg(r, "cmd");
-    if (cmd.length() && cmd[0] == '{') { kkSend(cmd); sendOk(r); }
+    if (cmd.length() && cmd[0] == '{') { kkSendLog(cmd); sendOk(r); }
     else sendErr(r, "bad command");
   });
 
@@ -282,7 +300,7 @@ static void webSetup() {
     char b[96];
     snprintf(b, sizeof b, "{\"cmd\":\"pid\",\"axis\":\"%s\",\"kp\":%.3f,\"ki\":%.3f,\"kd\":%.3f}",
              a.c_str(), kp, ki, kd);
-    kkSend(b);
+    kkSendLog(b);
     sendOk(r);
   });
 

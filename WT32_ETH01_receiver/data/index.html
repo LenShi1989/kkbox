@@ -29,7 +29,11 @@
     <nav id="nav">
       <a data-page="status"  class="active">系統狀態</a>
       <a data-page="network">網路設定</a>
-      <a data-page="pid">PID 設定</a>
+      <div class="nav-group">
+        <div class="nav-label">KKBOX 飛控管理</div>
+        <a data-page="pid">PID 設定</a>
+        <a data-page="serial">RS232 串口通訊</a>
+      </div>
       <a data-page="ota">OTA 更新</a>
       <a data-page="user">使用者設定</a>
     </nav>
@@ -161,6 +165,32 @@
         </table>
         </div>
         <button id="pid-save">儲存並下傳</button>
+      </div>
+    </section>
+
+    <!-- RS232 串口通訊 -->
+    <section id="page-serial" class="page">
+      <h2>RS232 串口通訊</h2>
+      <p class="muted">即時監控接收機與飛控板之間 (Serial2, 115200 8N1) 的 JSON 字串。
+        TX＝接收機轉送至飛控板（含 PID 下傳與 WebSocket 命令）；RX＝飛控板回傳（遙測 / ack / evt / err）。</p>
+      <div class="card">
+        <div class="row ser-bar">
+          <div class="ser-stats">
+            <span>TX <b id="ser-tx-n">0</b></span>
+            <span>RX <b id="ser-rx-n">0</b></span>
+            <span>顯示 <b id="ser-show-n">0</b></span>
+          </div>
+          <div class="row ser-ctrl">
+            <label class="inline small"><input type="checkbox" id="ser-auto" checked> 自動捲動</label>
+            <button id="ser-pause" class="ghost">暫停</button>
+            <button id="ser-clear" class="ghost">清除</button>
+          </div>
+        </div>
+        <div id="ser-log" class="ser-log"></div>
+        <div class="row ser-send-row">
+          <input id="ser-input" placeholder='{"cmd":"status"}' spellcheck="false">
+          <button id="ser-send">送出</button>
+        </div>
       </div>
     </section>
 

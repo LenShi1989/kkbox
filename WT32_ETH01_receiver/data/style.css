@@ -77,6 +77,9 @@ nav{display:flex;flex-direction:column;padding:12px 10px;gap:4px;flex:1}
 nav a{padding:10px 14px;border-radius:8px;color:var(--fg);cursor:pointer;display:block;white-space:nowrap}
 nav a:hover{background:var(--panel2)}
 nav a.active{background:var(--accent2);color:#fff}
+nav .nav-group{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+nav .nav-label{padding:4px 14px 2px;color:var(--muted);font-size:11px;letter-spacing:.5px}
+nav .nav-group a{padding-left:26px}
 
 /* ---------- 主題切換 (右上角) ---------- */
 .theme-switch{display:flex;gap:4px;margin-left:auto;padding:4px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
@@ -146,6 +149,30 @@ button.danger:hover{background:var(--err)}
 /* ---------- 進度條 ---------- */
 .bar{height:8px;background:var(--bg);border-radius:6px;overflow:hidden;margin:10px 0}
 .bar>div{height:100%;width:0;background:var(--accent);transition:width .3s}
+
+/* ---------- RS232 串口監控 ---------- */
+.ser-bar{flex-wrap:wrap;gap:10px}
+.ser-stats{display:flex;gap:16px;color:var(--muted);font-size:12px}
+.ser-stats b{color:var(--fg);font-variant-numeric:tabular-nums}
+.ser-ctrl{gap:10px;flex-wrap:wrap}
+.ser-ctrl button{margin-top:0}
+.ser-log{
+  height:340px;overflow-y:auto;margin:12px 0;padding:10px 12px;
+  background:var(--bg);border:1px solid var(--line);border-radius:8px;
+  font-family:Consolas,"Cascadia Mono","Courier New",monospace;font-size:12px;line-height:1.7;
+}
+.ser-line{display:flex;gap:8px;align-items:baseline}
+.ser-ts{flex:0 0 auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.ser-badge{
+  flex:0 0 auto;font-size:10px;font-weight:700;padding:0 6px;border-radius:4px;
+  letter-spacing:.5px;
+}
+.ser-line.tx .ser-badge{background:rgba(61,220,132,.15);color:var(--ok)}
+.ser-line.rx .ser-badge{background:rgba(55,194,255,.15);color:var(--accent)}
+.ser-text{white-space:pre-wrap;word-break:break-all}
+.ser-send-row{gap:10px;flex-wrap:wrap}
+.ser-send-row input{flex:1;min-width:200px;margin-top:0}
+.ser-send-row button{margin-top:0;flex:0 0 auto}
 
 /* ---------- 登入 ---------- */
 .login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}

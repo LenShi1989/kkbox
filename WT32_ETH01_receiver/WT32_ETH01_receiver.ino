@@ -77,21 +77,20 @@ void setup() {
 }
 
 void loop() {
-  /* 讀取飛控板 JSON 行並廣播 */
+  /* 讀取飛控板 JSON 行並廣播 (含串口監控頁所需之全部行) */
   String line;
   while (kkReadLine(line)) {
     gKkLines++;
     if (line.indexOf("\"t\":") >= 0) {
       gLastTelemetry   = line;
       gLastTelemetryMs = millis();
-      ws.textAll(line);
     } else if (line.indexOf("\"ack\":") >= 0) {
       gLastAck = line;
-      ws.textAll(line);
     } else if (line.indexOf("\"evt\":") >= 0) {
       gLastEvt = line;
-      ws.textAll(line);
     }
+    /* t/ack/evt 以外 (如 err) 也一併廣播, 供 RS232 串口通訊頁即時顯示 RX */
+    ws.textAll(line);
   }
 
   /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA) */
