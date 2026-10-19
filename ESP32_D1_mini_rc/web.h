@@ -49,6 +49,18 @@ static bool isAuthed(AsyncWebServerRequest* r) {
 }
 
 /* ================= JSON ================= */
+static String jsonEsc(const String& s) {
+  String o;
+  o.reserve(s.length() + 8);
+  for (unsigned i = 0; i < s.length(); i++) {
+    char c = s[i];
+    if (c == '"' || c == '\\') { o += '\\'; o += c; }
+    else if ((uint8_t)c < 0x20) o += ' ';
+    else o += c;
+  }
+  return o;
+}
+
 static String buildFsJson() {
   String s = "{\"total\":" + String(SPIFFS.totalBytes());
   s += ",\"used\":" + String(SPIFFS.usedBytes()) + ",\"files\":[";
@@ -86,6 +98,7 @@ static String buildStatusJson() {
   s += ",\"link\":{\"up\":" + String(gLinkUp ? 1 : 0);
   s += ",\"host\":\"" + gSet.rxHost + "\",\"port\":" + String(gSet.rxPort);
   s += ",\"age\":" + String(gTelemetryMs ? (millis() - gTelemetryMs) : 999999) + "}";
+  s += ",\"kkAck\":\"" + jsonEsc(gLastAck) + "\"";
   s += ",\"oled\":" + String(gOledOk ? 1 : 0) + "}";
   return s;
 }

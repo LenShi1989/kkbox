@@ -125,6 +125,14 @@ async function loadStatus() {
   if (s.link.up && up) { $('joy-state').textContent = '已連線接收機'; }
   else if (s.link.up) { $('joy-state').textContent = '連線中...'; }
   else $('joy-state').textContent = '未連線';
+
+  /* 飛控最後回應: 走 HTTP 輪詢, 瀏覽器 WS 中斷時仍可確認命令結果 */
+  if ((s.kkAck || '') !== lastAckPoll) {
+    lastAckPoll = s.kkAck || '';
+    const e = $('kk-ack');
+    if (e) e.textContent = s.kkAck || '-';
+    try { const a = JSON.parse(s.kkAck); if (a && a.ack) onAck(a.ack); } catch (err) {}
+  }
 }
 
 function applyTelemetry(t) {
@@ -158,6 +166,7 @@ function connectWs() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const url = proto + '//' + location.host + '/ws' + (TOKEN ? '?token=' + encodeURIComponent(TOKEN) : '');
   try { ws = new WebSocket(url); } catch (e) { return; }
+  ws.onopen = () => setWs('已建立 (即時)', true);
   ws.onmessage = (ev) => {
     try {
       const m = JSON.parse(ev.data);
@@ -167,7 +176,17 @@ function connectWs() {
       else if (m.evt === 'failsafe') onLinkErr('飛控 failsafe 已自動上鎖');
     } catch (e) {}
   };
-  ws.onclose = () => { ws = null; setTimeout(() => { if (!$('app').classList.contains('hidden')) connectWs(); }, 3000); };
+  ws.onclose = () => {
+    setWs('中斷 (改 REST 送出, 無即時 ack)', false);
+    ws = null;
+    setTimeout(() => { if (!$('app').classList.contains('hidden')) connectWs(); }, 3000);
+  };
+}
+function setWs(txt, ok) {
+  const e = $('ws-state');
+  if (!e) return;
+  e.textContent = txt;
+  e.style.color = ok ? 'var(--ok)' : 'var(--warn)';
 }
 function sendCmd(obj) {
   const s = JSON.stringify(obj);
@@ -178,6 +197,7 @@ function sendCmd(obj) {
 /* ---------- 命令回應追蹤: KK 板遙測傳輸中 RX 短暫全盲, 單次命令需重送 ---------- */
 const pendingCmd = {};
 let lastErrAt = 0;
+let lastAckPoll = '';
 function onAck(cmd) {
   const st = pendingCmd[cmd];
   if (!st) return;   /* 週期性命令 (throttle/setpoints) 的回應不提示 */

@@ -12,6 +12,11 @@
 
 static WebSocketsClient linkWs;
 
+/* 飛控板最後一筆回應 (ack): 供 /api/status 供網頁顯示/輪詢,
+ * 即使瀏覽器 WebSocket 中斷 (改用 REST 送命令) 也能確認命令結果 */
+static String   gLastAck   = "";
+static uint32_t gLastAckMs = 0;
+
 static void linkRelay(const String& msg) {
   localWs.textAll(msg);
 }
@@ -52,6 +57,7 @@ static void onLinkEvent(WStype_t type, uint8_t* payload, size_t length) {
     case WStype_TEXT: {
       String msg((char*)payload);
       if (length) msg = msg.substring(0, length);
+      if (msg.indexOf("\"ack\"") >= 0) { gLastAck = msg; gLastAckMs = millis(); }
       linkRelay(msg);
       if (msg.indexOf("\"gyro\"") >= 0) linkParse(msg);
       break;
