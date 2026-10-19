@@ -188,8 +188,12 @@ function setWs(txt, ok) {
   e.textContent = txt;
   e.style.color = ok ? 'var(--ok)' : 'var(--warn)';
 }
+let txCount = 0;
 function sendCmd(obj) {
   const s = JSON.stringify(obj);
+  txCount++;
+  const e = $('tx-info');
+  if (e) e.textContent = txCount + ' 筆 (最後: ' + (obj.cmd || '?') + ')';
   if (ws && ws.readyState === 1) ws.send(s);
   else api('/api/command', { method: 'POST', body: { cmd: s } }).catch((e) => onLinkErr(e.message));
 }
@@ -306,6 +310,7 @@ function padMove(clientX, clientY) {
   joyPitch = Math.round(-ny * RANGE);
   $('joy-roll').textContent = joyRoll;
   $('joy-pitch').textContent = joyPitch;
+  dirty = true;
 }
 pad.addEventListener('pointerdown', (e) => { dragging = true; pad.setPointerCapture(e.pointerId); padMove(e.clientX, e.clientY); });
 pad.addEventListener('pointermove', (e) => { if (dragging) padMove(e.clientX, e.clientY); });

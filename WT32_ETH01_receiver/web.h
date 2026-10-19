@@ -328,7 +328,7 @@ static void webSetup() {
   ElegantOTA.begin(&server);
 
   /* ---- 靜態檔案 (SPIFFS) ---- */
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html").setCacheControl("no-store");
 
   server.onNotFound([](AsyncWebServerRequest* r) {
     if (r->method() == HTTP_OPTIONS) { r->send(204); return; }

@@ -265,7 +265,8 @@ static void webSetup() {
 
   ElegantOTA.begin(&server);
 
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  /* no-store: 避免瀏覽器快取舊版網頁 (重燒 SPIFFS 後仍抓到舊 app.js) */
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html").setCacheControl("no-store");
 
   server.onNotFound([](AsyncWebServerRequest* r) {
     if (r->method() == HTTP_OPTIONS) { r->send(204); return; }
