@@ -8,8 +8,8 @@
 | ------------------- | -------- | ------------ | -------------------------------------------------- |
 | VCC                 | N/A      | 4,6          | DC 5V                                              |
 | GND                 | N/A      | 3,5          | 接地                                               |
-| RS232-RX            | 18       | 32           | RS232 RX(115200 bps, 8N1, SoftwareSerial)          |
-| RS232-TX            | 17       | 31           | RS232 TX(115200 bps, 8N1, SoftwareSerial)          |
+| RS232-RX            | 18       | 32           | RS232 RX(57600 bps, 8N1, SoftwareSerial)           |
+| RS232-TX            | 17       | 31           | RS232 TX(57600 bps, 8N1, SoftwareSerial)           |
 | Roll Gain           | 11       | 26           | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
 | Pitch Gain          | 12       | 27           | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
 | Yaw Gain            | 13       | 28           | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）     |
@@ -108,11 +108,12 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 > TX=D1(GPIO17)、RX=D2(GPIO18)，硬體 UART 的 D0(RXD) 已釋出。
 > TX 與硬體 UART TXD 同腳（PD1），韌體內不會 `Serial.begin()`。
 > bootloader 下載仍須接硬體 UART（D0=RXD / D1=TXD），RS232 連接器（D1/D2）僅供韌體通訊。
-> 115200 bps 在 8MHz 下用 SoftwareSerial 為邊界速度，若大量丟碼請降鮑率。
+> 鮑率已由 115200 降為 **57600**：8MHz 下 SoftwareSerial RX 收 115200 不穩（與 Servo 中斷共存，
+> 每位元僅 69 CPU 週期），57600（139 週期/位元）可靠且頻寬足夠遙測。
 
 ## 序列埠 JSON 協定
 
-鮑率 **115200 8N1**，每行一筆 JSON，以 `\n` 結尾。
+鮑率 **57600 8N1**，每行一筆 JSON，以 `\n` 結尾。
 
 ### 電腦 → 飛控板（控制命令）
 
@@ -168,7 +169,7 @@ python tools/kkbox_monitor.py --port COM3
 ## 無線傳輸架構（WT32-ETH01 接收機 + ESP32 D1 mini 遙控器）
 
 ```
-KK飛控板 ──序列埠(115200, SoftwareSerial)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
+KK飛控板 ──序列埠(57600, SoftwareSerial)── WT32-ETH01 接收機 ──RJ45/WiFi── 路由器 ──WiFi── ESP32 D1 mini 遙控器
    (Atmega168)            (有線+無線 網頁/WS)                          (OLED + 網頁模擬搖桿)
                                  │
                                  └── 瀏覽器 (有線或無線網頁，即時 WebSocket)
@@ -177,6 +178,25 @@ KK飛控板 ──序列埠(115200, SoftwareSerial)── WT32-ETH01 接收機 �
 - 兩台裝置皆為 **Arduino(.ino)** 專案，各自提供 **SPIFFS 網頁介面**（側邊欄）與 **WebSocket 即時雙向**。
 - 網頁需登入（**登入頁 + Session Token**，預設帳號 `admin` / 密碼 `kkbox`）。
 - 協定沿用飛控板的 JSON 命令；接收機只做轉送，遙控器端再於網頁喬狀控制。
+
+### 資料傳輸路徑（控制命令: 遙控器 → 接收機 → 飛控板）
+
+```
+ESP32 D1 mini 遙控器 (網頁喬狀 / 模擬搖桿)
+  │ ① WiFi WebSocket /ws  (或 REST POST /api/command)
+  │    linkSend() 以 WebSocket 用戶端送出
+  ▼
+WT32-ETH01 接收機
+   │ ② onWsEvent() 收到 { ... } → kkSendLog() → kkSend()
+   │    Serial2 RS232 (57600 8N1, GPIO5=RX / GPIO17=TX)，自動補 '\n'
+  ▼
+kkbox 飛控板 (ATmega168)
+     readSerial() 逐行讀取 → handleCommand() 解析 JSON 執行
+```
+
+- 命令字串**原樣轉送**（接收機不修改內容）；轉送同時以 `{"ser":{"dir":"tx","data":"..."}}` 廣播，供「RS232 串口通訊」頁即時顯示。
+- 回程（遙測 / ack / evt）方向相反：飛控板 `rs232` → 接收機 `kkReadLine()` → WebSocket **原樣廣播** → 遙控器 / 瀏覽器。
+- 對應程式碼：`ESP32_D1_mini_rc/link.h`（`linkSend`）、`WT32_ETH01_receiver/web.h`（`kkSendLog`）、`WT32_ETH01_receiver/kkbox.h`（`kkSend`）、`kkbox/kkbox.ino`（`readSerial` / `handleCommand`）。
 
 ### 共用程式庫
 

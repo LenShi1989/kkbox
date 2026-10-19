@@ -15,6 +15,7 @@
  */
 
 #include <Servo.h>
+#define _SS_MAX_RX_BUFF 128   /* SoftwareSerial RX 緩衝 (預設64B, 命令字串可達~70B 會被截斷) */
 #include <SoftwareSerial.h>
 #include "config.h"
 #include "pid.h"
@@ -112,6 +113,9 @@ static void sendTelemetry() {
   if (telIntervalMs == 0) return;
   uint32_t now = millis();
   if (now - lastTelMs < telIntervalMs) return;
+  /* RX 進行中先緩送 (SoftwareSerial TX 關中斷期間會屏蔽收訊),
+   * 但最多延後 200ms: 避免斷行殘留 (lineLen 卡住) 令遙測永久停擺 */
+  if ((rs232.available() || lineLen) && now - lastTelMs < telIntervalMs + 200) return;
   lastTelMs = now;
 
   rs232.print(F("{\"t\":"));               rs232.print(now);

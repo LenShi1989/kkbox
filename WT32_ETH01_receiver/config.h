@@ -22,7 +22,7 @@
 /* ---------- 與 KKBOX 飛控板的 UART ---------- */
 #define KK_RX_PIN   5
 #define KK_TX_PIN   17
-#define KK_BAUD     115200
+#define KK_BAUD     9600
 
 /* ---------- 內建 LAN8720A RJ45 (WT32-ETH01) ---------- */
 #define ETH_ADDR    1

@@ -14,7 +14,9 @@
  */
 #define RS232_RX_PIN 2   /* GPIO18 = PD2 = D2 */
 #define RS232_TX_PIN 1   /* GPIO17 = PD1 = D1 */
-#define SERIAL_BAUD 115200
+/* 57600: 8MHz 下 SoftwareSerial RX 收 115200 不穩 (與 Servo 中斷共存,
+ * 每位元僅 69 CPU 週期); 57600 (139 週期/位元) 可靠且頻寬足夠遙測。 */
+#define SERIAL_BAUD 9600
 
 /* ---------- 板載 LED1 ----------
  * 原理圖 LED1 = ATmega168 PB6 (GPIO6)。
@@ -116,6 +118,8 @@ static inline void ledWrite(uint8_t on) {
 
 /* ---------- 序列緩衝 (ATmega168 僅 1KB SRAM, 請勿任意放大) ---------- */
 #define LINE_BUF_SIZE   72
-#define TEL_INTERVAL_MS 50
+/* 遙測 100ms: 57600 bps 下一幀 ~29ms; 50ms 間隔時 TX 佔空比 57%,
+ * SoftwareSerial TX 期間 RX 幾乎全盲, 命令易被丟; 100ms 降至 ~29% */
+#define TEL_INTERVAL_MS 100
 
 #endif

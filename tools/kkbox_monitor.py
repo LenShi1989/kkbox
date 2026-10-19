@@ -90,7 +90,7 @@ def command_to_json(parts):
 def main():
     ap = argparse.ArgumentParser(description="KKBOX serial monitor")
     ap.add_argument("--port", required=True, help="序列埠, 例如 COM3 或 /dev/ttyUSB0")
-    ap.add_argument("--baud", type=int, default=115200)
+    ap.add_argument("--baud", type=int, default=57600)
     ap.add_argument("--led", choices=["on", "off", "blink"], help="單次送出 LED 命令後結束")
     ap.add_argument("--raw", help="送出原始 JSON 命令後結束")
     args = ap.parse_args()
