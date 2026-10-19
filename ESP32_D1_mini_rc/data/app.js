@@ -129,6 +129,7 @@ async function loadStatus() {
 
 function applyTelemetry(t) {
   if (!t || !t.gyro) return;
+  armedNow = !!t.armed;
   $('t-armed').textContent = t.armed ? '已解鎖' : '上鎖';
   $('t-armed').style.color = t.armed ? 'var(--warn)' : 'var(--muted)';
   $('t-thr').textContent = t.set ? t.set.thr : '-';
@@ -158,14 +159,52 @@ function connectWs() {
   const url = proto + '//' + location.host + '/ws' + (TOKEN ? '?token=' + encodeURIComponent(TOKEN) : '');
   try { ws = new WebSocket(url); } catch (e) { return; }
   ws.onmessage = (ev) => {
-    try { const m = JSON.parse(ev.data); if (m.gyro) applyTelemetry(m); } catch (e) {}
+    try {
+      const m = JSON.parse(ev.data);
+      if (m.gyro) applyTelemetry(m);
+      else if (m.ack) onAck(m.ack);
+      else if (m.err) onLinkErr(m.err);
+      else if (m.evt === 'failsafe') onLinkErr('飛控 failsafe 已自動上鎖');
+    } catch (e) {}
   };
   ws.onclose = () => { ws = null; setTimeout(() => { if (!$('app').classList.contains('hidden')) connectWs(); }, 3000); };
 }
 function sendCmd(obj) {
   const s = JSON.stringify(obj);
   if (ws && ws.readyState === 1) ws.send(s);
-  else api('/api/command', { method: 'POST', body: { cmd: s } }).catch(() => {});
+  else api('/api/command', { method: 'POST', body: { cmd: s } }).catch((e) => onLinkErr(e.message));
+}
+
+/* ---------- 命令回應追蹤: KK 板遙測傳輸中 RX 短暫全盲, 單次命令需重送 ---------- */
+const pendingCmd = {};
+let lastErrAt = 0;
+function onAck(cmd) {
+  const st = pendingCmd[cmd];
+  if (!st) return;   /* 週期性命令 (throttle/setpoints) 的回應不提示 */
+  clearTimeout(st.timer); delete pendingCmd[cmd];
+  toast('✓ ' + cmd + ' 飛控已回應', 'ok');
+}
+function onLinkErr(msg) {
+  const now = Date.now();
+  if (now - lastErrAt < 3000) return;   /* 節流: 週期命令失敗不洗版 */
+  lastErrAt = now;
+  toast('✗ ' + msg, 'err');
+}
+function sendOnce(obj, tries = 3) {
+  const cmd = obj.cmd;
+  const old = pendingCmd[cmd];
+  if (old) clearTimeout(old.timer);
+  const st = { n: 0, timer: 0 };
+  pendingCmd[cmd] = st;
+  (function go() {
+    sendCmd(obj);
+    st.n++;
+    st.timer = setTimeout(() => {
+      if (st.n < tries) { go(); return; }
+      if (pendingCmd[cmd] === st) delete pendingCmd[cmd];
+      toast('✗ ' + cmd + ' 無回應 (' + tries + ' 次)', 'err');
+    }, 250);
+  })();
 }
 
 /* ---------- 網路設定 ---------- */
@@ -227,6 +266,7 @@ $('u-save').addEventListener('click', async () => {
 /* ---------- 模擬搖桿 ---------- */
 const RANGE = 200;          /* 角速率滿刻度 deg/s */
 let joyRoll = 0, joyPitch = 0, joyYaw = 0, joyThr = 1000, dirty = false;
+let armedNow = false;
 const pad = $('pad'), knob = $('knob');
 let dragging = false;
 
@@ -264,11 +304,11 @@ $('btn-reset').addEventListener('click', () => { resetPad(); dirty = true; });
 $('joy-thr').addEventListener('input', (e) => { joyThr = +e.target.value; $('joy-thr-v').textContent = joyThr; dirty = true; });
 $('joy-yaw').addEventListener('input', (e) => { joyYaw = +e.target.value; $('joy-yaw-v').textContent = joyYaw; dirty = true; });
 
-$('btn-arm').addEventListener('click', () => sendCmd({ cmd: 'arm' }));
-$('btn-disarm').addEventListener('click', () => sendCmd({ cmd: 'disarm' }));
-$('btn-cal').addEventListener('click', () => sendCmd({ cmd: 'calibrate' }));
+$('btn-arm').addEventListener('click', () => sendOnce({ cmd: 'arm' }));
+$('btn-disarm').addEventListener('click', () => sendOnce({ cmd: 'disarm' }));
+$('btn-cal').addEventListener('click', () => sendOnce({ cmd: 'calibrate' }));
 document.querySelectorAll('[data-led]').forEach(b =>
-  b.addEventListener('click', () => sendCmd({ cmd: 'led', mode: b.dataset.led })));
+  b.addEventListener('click', () => sendOnce({ cmd: 'led', mode: b.dataset.led })));
 
 /* 連續傳送 (20Hz) */
 setInterval(() => {
@@ -277,6 +317,12 @@ setInterval(() => {
   sendCmd({ cmd: 'setpoints', roll: joyRoll, pitch: joyPitch, yaw: joyYaw });
   dirty = false;
 }, 50);
+
+/* 解鎖中每 500ms 送 ping 保活: KK 板 2 秒無命令即 failsafe 上鎖,
+ * 否則搖桿靜止時 (無 input 事件) 會被誤判失聯而斷馬達 */
+setInterval(() => {
+  if (armedNow) sendCmd({ cmd: 'ping' });
+}, 500);
 
 /* ---------- 啟動 ---------- */
 function start() {

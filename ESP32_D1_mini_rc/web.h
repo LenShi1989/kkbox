@@ -117,7 +117,10 @@ static void onLocalWs(AsyncWebSocket* s, AsyncWebSocketClient* c,
     AwsFrameInfo* info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
       String msg = String((char*)data).substring(0, len);
-      if (msg.startsWith("{")) linkSend(msg);   /* 轉送接收機 -> 飛控板 */
+      if (msg.startsWith("{")) {
+        if (gLinkUp) linkSend(msg);   /* 轉送接收機 -> 飛控板 */
+        else c->text("{\"err\":\"link down\"}");   /* 斷線時明確回報, 不再靜默丟棄 */
+      }
     }
   }
 }
@@ -159,8 +162,9 @@ static void webSetup() {
   server.on("/api/command", HTTP_POST, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;
     String cmd = arg(r, "cmd");
-    if (cmd.length() && cmd[0] == '{') { linkSend(cmd); sendOk(r); }
-    else sendErr(r, "bad command");
+    if (!cmd.length() || cmd[0] != '{') { sendErr(r, "bad command"); return; }
+    if (!gLinkUp) { sendErr(r, "link down", 503); return; }
+    linkSend(cmd); sendOk(r);
   });
 
   server.on("/api/fs", HTTP_GET, [](AsyncWebServerRequest* r) {
