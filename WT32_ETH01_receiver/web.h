@@ -218,17 +218,25 @@ static void webSetup() {
     else sendErr(r, "bad command");
   });
 
-  /* ---- 藍牙 (BLE) 狀態 / 斷線 ---- */
+  /* ---- 藍牙 (BLE / SPP) 狀態 / 切換通道 ---- */
   server.on("/api/bt", HTTP_GET, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;
-    String s = "{\"connected\":" + String(gBtConnected ? 1 : 0) +
-               ",\"name\":\"" + btName() + "\",\"rx\":" + String(gBtRxLines) +
-               ",\"conns\":" + String(gBtConnCount) + "}";
+    String s = "{\"mode\":" + String(gSet.btMode) +
+               ",\"name\":\"" + (gSet.btMode == 1 ? String(SPP_NAME) : btName()) + "\"" +
+               ",\"connected\":" + String(btLinked() ? 1 : 0) +
+               ",\"rx\":" + String(btRxLines()) +
+               ",\"conns\":" + String(btConnCount()) + "}";
     sendJson(r, s);
   });
   server.on("/api/bt", HTTP_POST, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;
-    if (arg(r, "action") == "disconnect") { btDisconnectClient(); sendOk(r); }
+    String a = arg(r, "action");
+    if (a == "disconnect") { btDisconnectClient(); sendOk(r); }
+    else if (a == "mode") {
+      uint8_t m = (uint8_t)atoi(arg(r, "mode").c_str());
+      if (btSetMode(m)) sendOk(r);
+      else sendErr(r, "switch failed", 500);
+    }
     else sendErr(r, "bad action");
   });
 
