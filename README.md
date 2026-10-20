@@ -73,6 +73,13 @@ kkbox/
 │   ├── web.h                     網頁/WebSocket/REST/OTA/登入
 │   ├── build_opt.h               ElegantOTA 非同步旗標
 │   └── data/                     SPIFFS 網頁 (含模擬搖桿)
+├── ESP32_D1_mini_rc_BT/          ESP32 D1 mini 藍牙遙控器 (Classic BT SPP client, 純硬體)
+│   ├── ESP32_D1_mini_rc_BT.ino   主程式 (開機校正 / 序列埠指令)
+│   ├── config.h                  腳位 / 傳統藍牙 / 傳送節奏
+│   ├── settings.h                NVS 設定儲存 (Server 名稱/MAC、ID、搖桿校正)
+│   ├── proto.h                   16-byte 二進位協定 (TX/RX 打包解包)
+│   ├── bt.h                      BluetoothSerial 用戶端 (自動連線/重連)
+│   └── display.h                 SSD1306 OLED 顯示
 └── tools/
     └── kkbox_monitor.py          電腦端序列埠遠端測試工具 (pyserial)
 ```
@@ -289,6 +296,24 @@ Y   0.8        1460
 
 - 右上角狀態：WiFi 通道顯示 `NO LINK` / `LINK`，藍牙通道顯示 `BT ----` / `BT LINK`（是否連上接收機）。
 - 左側為陀螺三軸角速度與解鎖/油門；右側為四顆馬達輸出。
+
+### ESP32 D1 mini 藍牙遙控器（`ESP32_D1_mini_rc_BT/`）
+
+- 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`），預設分區即可（Flash 約 85%）。
+- **傳統藍牙（Classic BT / SPP）用戶端**：開機自動連線 WT32 藍牙 Server（名稱或 MAC 可改），斷線每 3 秒自動重連；純硬體遙控，無 WiFi / 網頁 / OTA。
+- 傳送 16 bytes 遙控資料（每 100ms）、接收 16 bytes 遙測，協定沿用 `test/esp32_server---TESTOK-----20250710`。
+- 開機流程：轉 VRC1 選無人機 ID → 按下 SW1 確認 → 按住 SW1 期間校正搖桿 → 放開 SW1 結束；**按住 SW2 開機可跳過**（沿用已存的 ID/校正值）。
+- 序列埠（115200）指令：`help` / `status` / `sc`（掃描）/ `sn <name>`（Server 名稱）/ `sa <mac>`（Server MAC）/ `sv`（儲存並重連）/ `id` / `fly` / `cal`。
+
+| ESP32 D1 mini | 連接對象        | 說明                     |
+| ------------- | --------------- | ------------------------ |
+| GPIO39/35/33/34 | VTX/VTY/VPIT/VROL | 四軸搖桿 ADC            |
+| GPIO13/25/32/12 | VRC1~4          | 可變電阻                 |
+| GPIO10/18/19/23 | SW1~4           | 開關（INPUT_PULLUP，LOW=ON） |
+| GPIO17 (SDA) / GPIO16 (SCL) | SSD1306 | I2C（沿用測試碼接線） |
+| GPIO2          | 板上 LED        | 連線指示（未連線閃較快） |
+
+> 注意：SW1 = GPIO10 在多數 ESP32-WROOM 模組屬 Flash 腳；若開機異常請改 `config.h` 的 `PIN_SW1` 並同步接線。
 
 ### 首次使用流程
 
