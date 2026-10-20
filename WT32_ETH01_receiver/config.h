@@ -12,7 +12,7 @@
  *   - 內建 LAN8720A RJ45 有線網路 + WiFi 無線網路
  *   - 藍牙 BLE (NimBLE) GATT 伺服器, 供 RC 以 BLE 傳收命令 / 遙測
  *   - SPIFFS 網頁介面 (ESPAsyncWebServer) + WebSocket 即時雙向
- *   - WiFi / RJ45 / PID / 使用者 / OTA 設定
+ *   - WiFi / RJ45 / 馬達模式 / 使用者 / OTA 設定 (PID 設定已移至遙控器)
  * ============================================================= */
 
 #include <Arduino.h>
@@ -52,17 +52,5 @@
 #define BLE_SVC_UUID    "6b6f0001-4b4b-4000-8000-00805f9b34fb"
 #define BLE_CMD_UUID    "6b6f0002-4b4b-4000-8000-00805f9b34fb"   /* RC -> RX (write) */
 #define BLE_TEL_UUID    "6b6f0003-4b4b-4000-8000-00805f9b34fb"   /* RX -> RC (notify) */
-
-/* ---------- 預設 PID (與 kkbox/config.h 一致) ---------- */
-/* roll/pitch KI 即自動配平積分 (auto-trim): 搖桿置中時緩慢學習配平量 */
-#define DEF_ROLL_KP   3.0f
-#define DEF_ROLL_KI   0.08f
-#define DEF_ROLL_KD   8.0f
-#define DEF_PITCH_KP  3.0f
-#define DEF_PITCH_KI  0.08f
-#define DEF_PITCH_KD  8.0f
-#define DEF_YAW_KP    4.0f
-#define DEF_YAW_KI    0.5f
-#define DEF_YAW_KD    0.0f
 
 #endif

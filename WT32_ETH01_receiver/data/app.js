@@ -110,7 +110,6 @@ $('nav').addEventListener('click', (e) => {
   document.querySelectorAll('#nav a').forEach(x => x.classList.toggle('active', x === a));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + a.dataset.page));
   if (a.dataset.page === 'network') loadNet();
-  if (a.dataset.page === 'pid') loadPid();
   if (a.dataset.page === 'motors') motorsTouched = false;
   if (a.dataset.page === 'user') loadUser();
 });
@@ -329,27 +328,6 @@ $('net-save').addEventListener('click', async () => {
     await api('/api/net', { method: 'POST', body: { dhcp, ip: $('net-ip').value, gw: $('net-gw').value, mask: $('net-mask').value } });
     toast('已儲存，裝置將重新啟動');
   } catch (e) { toast('儲存失敗', 'err'); }
-});
-
-/* ---------- PID ---------- */
-async function loadPid() {
-  let p;
-  try { p = await api('/api/pid'); } catch (e) { return; }
-  for (const ax of ['roll', 'pitch', 'yaw']) {
-    $('pid-' + ax + '-kp').value = p[ax].kp;
-    $('pid-' + ax + '-ki').value = p[ax].ki;
-    $('pid-' + ax + '-kd').value = p[ax].kd;
-  }
-}
-$('pid-save').addEventListener('click', async () => {
-  try {
-    for (const ax of ['roll', 'pitch', 'yaw']) {
-      await api('/api/pid', { method: 'POST', body: {
-        axis: ax, kp: $('pid-' + ax + '-kp').value,
-        ki: $('pid-' + ax + '-ki').value, kd: $('pid-' + ax + '-kd').value } });
-    }
-    toast('PID 已儲存並下傳飛控板');
-  } catch (e) { toast('儲存失敗: ' + e.message, 'err'); }
 });
 
 /* ---------- RS232 串口監控 ---------- */

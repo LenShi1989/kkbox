@@ -29,6 +29,7 @@
       <a data-page="status"   class="active">系統狀態</a>
       <a data-page="network">網路設定</a>
       <a data-page="bt">藍牙連線</a>
+      <a data-page="pid">PID 設定</a>
       <a data-page="joy">模擬搖桿</a>
       <a data-page="ota">OTA 更新</a>
       <a data-page="user">使用者設定</a>
@@ -170,6 +171,26 @@
           <button id="bt-clear" class="danger">清除配對</button>
         </div>
         <div id="bt-err" class="err"></div>
+      </div>
+    </section>
+
+    <!-- PID 設定 -->
+    <section id="page-pid" class="page">
+      <h2>PID 設定</h2>
+      <p class="muted">儲存後會經由目前連線通道（WiFi 或藍牙）以命令下傳飛控板，並記錄於遙控器。</p>
+      <div class="card">
+        <div class="scroll-x">
+        <table class="tbl" id="pid-tbl">
+          <thead><tr><th>軸</th><th>Kp</th><th>Ki</th><th>Kd</th></tr></thead>
+          <tbody>
+            <tr><td>Roll</td><td><input id="pid-roll-kp" type="number" step="0.1"></td><td><input id="pid-roll-ki" type="number" step="0.1"></td><td><input id="pid-roll-kd" type="number" step="0.1"></td></tr>
+            <tr><td>Pitch</td><td><input id="pid-pitch-kp" type="number" step="0.1"></td><td><input id="pid-pitch-ki" type="number" step="0.1"></td><td><input id="pid-pitch-kd" type="number" step="0.1"></td></tr>
+            <tr><td>Yaw</td><td><input id="pid-yaw-kp" type="number" step="0.1"></td><td><input id="pid-yaw-ki" type="number" step="0.1"></td><td><input id="pid-yaw-kd" type="number" step="0.1"></td></tr>
+          </tbody>
+        </table>
+        </div>
+        <button id="pid-save">儲存並下傳</button>
+        <p class="muted small">Roll / Pitch 的 Ki 為自動配平積分（搖桿置中時才累積），建議保持 0.08 量級。</p>
       </div>
     </section>
 

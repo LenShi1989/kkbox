@@ -8,7 +8,7 @@
  * - 藍牙 BLE (NimBLE) GATT 伺服器: 供 RC 以 BLE 傳收命令 / 遙測
  * - SPIFFS 網頁介面 (ESPAsyncWebServer) + WebSocket 即時雙向
  * - 與 KKBOX 飛控板以 Serial2 (GPIO5/GPIO17, 9600) 交換 JSON
- * - 網頁: 系統狀態 / 網路設定 / PID 設定 / OTA / 使用者設定
+ * - 網頁: 系統狀態 / 網路設定 / 馬達模式 / 使用者設定 / OTA
  * - ESPAsyncWebServer + AsyncWebSocket + ElegantOTA
  * ---------------------------------------------------------------
  * 網頁需先登入 (預設 admin / kkbox)。

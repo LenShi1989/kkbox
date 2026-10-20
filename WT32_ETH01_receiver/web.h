@@ -300,36 +300,6 @@ static void webSetup() {
     sendOk(r);
   });
 
-  /* ---- PID ---- */
-  server.on("/api/pid", HTTP_GET, [](AsyncWebServerRequest* r) {
-    requireAuth(r); if (r->getResponse()) return;
-    char b[320];
-    snprintf(b, sizeof b,
-      "{\"roll\":{\"kp\":%.3f,\"ki\":%.3f,\"kd\":%.3f},"
-      "\"pitch\":{\"kp\":%.3f,\"ki\":%.3f,\"kd\":%.3f},"
-      "\"yaw\":{\"kp\":%.3f,\"ki\":%.3f,\"kd\":%.3f}}",
-      gSet.rollKp, gSet.rollKi, gSet.rollKd,
-      gSet.pitchKp, gSet.pitchKi, gSet.pitchKd,
-      gSet.yawKp, gSet.yawKi, gSet.yawKd);
-    sendJson(r, b);
-  });
-  server.on("/api/pid", HTTP_POST, [](AsyncWebServerRequest* r) {
-    requireAuth(r); if (r->getResponse()) return;
-    String a = arg(r, "axis", "roll");
-    float kp = arg(r, "kp", "0").toFloat();
-    float ki = arg(r, "ki", "0").toFloat();
-    float kd = arg(r, "kd", "0").toFloat();
-    if (a == "roll")  { gSet.rollKp = kp; gSet.rollKi = ki; gSet.rollKd = kd; }
-    if (a == "pitch") { gSet.pitchKp = kp; gSet.pitchKi = ki; gSet.pitchKd = kd; }
-    if (a == "yaw")   { gSet.yawKp = kp; gSet.yawKi = ki; gSet.yawKd = kd; }
-    settingsSavePid();
-    char b[96];
-    snprintf(b, sizeof b, "{\"cmd\":\"pid\",\"axis\":\"%s\",\"kp\":%.3f,\"ki\":%.3f,\"kd\":%.3f}",
-             a.c_str(), kp, ki, kd);
-    kkSendLog(b);
-    sendOk(r);
-  });
-
   /* ---- 使用者設定 ---- */
   server.on("/api/user", HTTP_GET, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;

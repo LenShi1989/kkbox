@@ -42,11 +42,6 @@ struct Settings {
   String gw;
   String mask;
 
-  /* PID */
-  float rollKp, rollKi, rollKd;
-  float pitchKp, pitchKi, pitchKd;
-  float yawKp, yawKi, yawKd;
-
   /* 裝置連結 Token (供 ESP32 D1 mini RC 連線 WS 用) */
   String deviceToken;
 };
@@ -71,16 +66,7 @@ static inline void settingsLoad() {
   gSet.dhcp  = gPrefs.getBool("dhcp", true);
   gSet.ip    = gPrefs.getString("ip", "192.168.1.50");
   gSet.gw    = gPrefs.getString("gw", "192.168.1.1");
-  gSet.mask  = gPrefs.getString("mask", "255.255.255.0");
-  gSet.rollKp  = gPrefs.getFloat("rkp", DEF_ROLL_KP);
-  gSet.rollKi  = gPrefs.getFloat("rki", DEF_ROLL_KI);
-  gSet.rollKd  = gPrefs.getFloat("rkd", DEF_ROLL_KD);
-  gSet.pitchKp = gPrefs.getFloat("pkp", DEF_PITCH_KP);
-  gSet.pitchKi = gPrefs.getFloat("pki", DEF_PITCH_KI);
-  gSet.pitchKd = gPrefs.getFloat("pkd", DEF_PITCH_KD);
-  gSet.yawKp   = gPrefs.getFloat("ykp", DEF_YAW_KP);
-  gSet.yawKi   = gPrefs.getFloat("yki", DEF_YAW_KI);
-  gSet.yawKd   = gPrefs.getFloat("ykd", DEF_YAW_KD);
+  gSet.mask = gPrefs.getString("mask", "255.255.255.0");
   gSet.deviceToken = gPrefs.getString("dtok", "");
   if (gSet.deviceToken.length() == 0) {
     gSet.deviceToken = randomHex(16);
@@ -97,11 +83,6 @@ static inline void settingsSaveNet() {
   gPrefs.putString("ip", gSet.ip);
   gPrefs.putString("gw", gSet.gw);
   gPrefs.putString("mask", gSet.mask);
-}
-static inline void settingsSavePid() {
-  gPrefs.putFloat("rkp", gSet.rollKp);  gPrefs.putFloat("rki", gSet.rollKi);  gPrefs.putFloat("rkd", gSet.rollKd);
-  gPrefs.putFloat("pkp", gSet.pitchKp); gPrefs.putFloat("pki", gSet.pitchKi); gPrefs.putFloat("pkd", gSet.pitchKd);
-  gPrefs.putFloat("ykp", gSet.yawKp);   gPrefs.putFloat("yki", gSet.yawKi);   gPrefs.putFloat("ykd", gSet.yawKd);
 }
 static inline void settingsSaveUser() {
   gPrefs.putString("user", gSet.user);

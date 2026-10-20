@@ -44,6 +44,11 @@ struct Settings {
   uint8_t channel;      /* 0 = WiFi, 1 = 藍牙 */
   String  btAddr;       /* 已配對接收機位址 (自動重連用) */
   String  btName;       /* 已配對接收機名稱 (顯示用) */
+
+  /* PID (本機保存; 下傳飛控板需經目前通道連線) */
+  float rollKp, rollKi, rollKd;
+  float pitchKp, pitchKi, pitchKd;
+  float yawKp, yawKi, yawKd;
 };
 
 static Preferences gPrefs;
@@ -68,6 +73,15 @@ static inline void settingsLoad() {
   gSet.channel = gPrefs.getUChar("btch", DEF_BT_CHANNEL);
   gSet.btAddr  = gPrefs.getString("btaddr", "");
   gSet.btName  = gPrefs.getString("btname", "");
+  gSet.rollKp  = gPrefs.getFloat("rkp", DEF_ROLL_KP);
+  gSet.rollKi  = gPrefs.getFloat("rki", DEF_ROLL_KI);
+  gSet.rollKd  = gPrefs.getFloat("rkd", DEF_ROLL_KD);
+  gSet.pitchKp = gPrefs.getFloat("pkp", DEF_PITCH_KP);
+  gSet.pitchKi = gPrefs.getFloat("pki", DEF_PITCH_KI);
+  gSet.pitchKd = gPrefs.getFloat("pkd", DEF_PITCH_KD);
+  gSet.yawKp   = gPrefs.getFloat("ykp", DEF_YAW_KP);
+  gSet.yawKi   = gPrefs.getFloat("yki", DEF_YAW_KI);
+  gSet.yawKd   = gPrefs.getFloat("ykd", DEF_YAW_KD);
 }
 
 static inline void settingsSaveWifi() {
@@ -87,6 +101,11 @@ static inline void settingsSaveBt() {
   gPrefs.putUChar("btch", gSet.channel);
   gPrefs.putString("btaddr", gSet.btAddr);
   gPrefs.putString("btname", gSet.btName);
+}
+static inline void settingsSavePid() {
+  gPrefs.putFloat("rkp", gSet.rollKp);  gPrefs.putFloat("rki", gSet.rollKi);  gPrefs.putFloat("rkd", gSet.rollKd);
+  gPrefs.putFloat("pkp", gSet.pitchKp); gPrefs.putFloat("pki", gSet.pitchKi); gPrefs.putFloat("pkd", gSet.pitchKd);
+  gPrefs.putFloat("ykp", gSet.yawKp);   gPrefs.putFloat("yki", gSet.yawKi);   gPrefs.putFloat("ykd", gSet.yawKd);
 }
 
 #endif

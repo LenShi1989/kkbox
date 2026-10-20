@@ -58,7 +58,7 @@ kkbox/
 ├── WT32_ETH01_receiver/          WT32-ETH01 接收機 (有線 RJ45 + WiFi 網頁)
 │   ├── WT32_ETH01_receiver.ino   主程式: 網路 + 飛控 UART 橋接
 │   ├── config.h                  腳位 / 網路 / 預設參數
-│   ├── settings.h                NVS 設定儲存 (帳密/WiFi/IP/PID/Token)
+│   ├── settings.h                NVS 設定儲存 (帳密/WiFi/IP/Token)
 │   ├── kkbox.h                   飛控板 UART 橋接
 │   ├── web.h                     網頁/WebSocket/REST/OTA/登入
 │   ├── build_opt.h               ElegantOTA 非同步旗標
@@ -249,7 +249,9 @@ kkbox 飛控板 (ATmega168)
 - 開發板：`esp32:esp32:wt32-eth01`（Arduino IDE：`WT32-ETH01 Ethernet Module`）
 - **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.35MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
 - 功能：RJ45（LAN8720A）+ WiFi、**藍牙 BLE（NimBLE）GATT 伺服器**、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
-- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**PID 設定**、**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
+- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
+
+> PID 設定頁已**移至遙控器**（見下方 ESP32 D1 mini 遙控器）。
 - 藍牙（BLE）作為 AP/STA 以外的第三種連線方式：開機即以廣播名稱 `KKBOX-RX-<MAC後4碼>` 提供 GATT 服務（含 CMD 寫入、TEL 通知兩特徵），供遙控器掃描配對；與 WiFi 併存，不需切換。
 
 | WT32-ETH01  | 連接對象          | 說明                            |
@@ -266,7 +268,7 @@ kkbox 飛控板 (ATmega168)
 - 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`）
 - **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.54MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
 - 功能：WiFi 連線、以 WebSocket 連接收收機、**藍牙 BLE（NimBLE）用戶端**、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、**定高控制 (油門保持)**、OTA、登入。
-- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**藍牙連線**（掃描／連線配對／清除、WiFi↔藍牙通道切換）、**模擬搖桿**（含定高切換）、**OTA 更新**、**使用者設定**。
+- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**藍牙連線**（掃描／連線配對／清除、WiFi↔藍牙通道切換）、**PID 設定**（三軸 PID，存本機 NVS，經目前通道下傳飛控板）、**模擬搖桿**（含定高切換）、**OTA 更新**、**使用者設定**。
 
 | ESP32 D1 mini | 連接對象          | 說明     |
 | ------------- | ----------------- | -------- |
@@ -405,7 +407,7 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 | POST     | `/api/wifi`             | `ssid`,`pass` 或 `action=clear`             |
 | GET/POST | `/api/user`             | 帳號設定（POST 需 `cur` 目前密碼）          |
 | GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）           |
-| GET/POST | `/api/pid`（僅接收機）  | 三軸 PID，儲存後下傳飛控板                  |
+| GET/POST | `/api/pid`（僅遙控器）  | 三軸 PID（存本機 NVS，經目前通道下傳飛控板） |
 | GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                          |
 | GET/POST | `/api/bt`               | 藍牙狀態／掃描結果（GET）；`action=scan\\|stop\\|connect\\|disconnect\\|clear\\|channel`（POST，僅遙控器具連線控制） |
 | —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）              |

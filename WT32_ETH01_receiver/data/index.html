@@ -31,7 +31,6 @@
       <a data-page="network">網路設定</a>
       <div class="nav-group">
         <div class="nav-label">KKBOX 飛控管理</div>
-        <a data-page="pid">PID 設定</a>
         <a data-page="motors">馬達模式切換</a>
         <a data-page="flight">飛行狀態</a>
         <a data-page="serial">RS232 串口通訊</a>
@@ -148,25 +147,6 @@
           <label>子網路遮罩 <input id="net-mask"></label>
         </div>
         <button id="net-save">儲存 (將重新啟動)</button>
-      </div>
-    </section>
-
-    <!-- PID 設定 -->
-    <section id="page-pid" class="page">
-      <h2>PID 設定</h2>
-      <p class="muted">儲存後會立即以命令下傳飛控板並記錄於接收機。軸速率 PID。</p>
-      <div class="card">
-        <div class="scroll-x">
-        <table class="tbl" id="pid-tbl">
-          <thead><tr><th>軸</th><th>Kp</th><th>Ki</th><th>Kd</th></tr></thead>
-          <tbody>
-            <tr><td>Roll</td><td><input id="pid-roll-kp" type="number" step="0.1"></td><td><input id="pid-roll-ki" type="number" step="0.1"></td><td><input id="pid-roll-kd" type="number" step="0.1"></td></tr>
-            <tr><td>Pitch</td><td><input id="pid-pitch-kp" type="number" step="0.1"></td><td><input id="pid-pitch-ki" type="number" step="0.1"></td><td><input id="pid-pitch-kd" type="number" step="0.1"></td></tr>
-            <tr><td>Yaw</td><td><input id="pid-yaw-kp" type="number" step="0.1"></td><td><input id="pid-yaw-ki" type="number" step="0.1"></td><td><input id="pid-yaw-kd" type="number" step="0.1"></td></tr>
-          </tbody>
-        </table>
-        </div>
-        <button id="pid-save">儲存並下傳</button>
       </div>
     </section>
 
