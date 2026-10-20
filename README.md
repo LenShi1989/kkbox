@@ -60,7 +60,7 @@ kkbox/
 │   ├── config.h                  腳位 / 網路 / 預設參數
 │   ├── settings.h                NVS 設定儲存 (帳密/WiFi/IP/Token)
 │   ├── kkbox.h                   飛控板 UART 橋接
-│   ├── bt.h                      藍牙 Server (二擇一: BLE NimBLE / 切換)
+│   ├── bt.h                      藍牙管理 (三擇一: BLE NimBLE / SPP / 關閉)
 │   ├── spp.h                     傳統藍牙 SPP server + 16-byte 協定轉 kkbox 指令
 │   ├── web.h                     網頁/WebSocket/REST/OTA/登入
 │   ├── build_opt.h               ElegantOTA 非同步旗標
@@ -257,14 +257,15 @@ kkbox 飛控板 (ATmega168)
 
 - 開發板：`esp32:esp32:wt32-eth01`（Arduino IDE：`WT32-ETH01 Ethernet Module`）
 - **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.35MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
-- 功能：RJ45（LAN8720A）+ WiFi、**藍牙 Server（二擇一：BLE NimBLE / 傳統藍牙 SPP）**、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
+- 功能：RJ45（LAN8720A）+ WiFi、**藍牙管理（三擇一：BLE NimBLE / 傳統藍牙 SPP / 關閉）**、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
 - 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
 
 > PID 設定頁已**移至遙控器**（見下方 ESP32 D1 mini 遙控器）。
-- 藍牙作為 AP/STA 以外的第三種連線方式，**兩種模式互斥**（ESP32 只能用一個藍牙主機堆疊），由「系統狀態 → 藍牙通道」切換（`GET/POST /api/bt`）：
-  - **模式 0 = BLE（NimBLE GATT server）**：廣播名稱 `KKBOX-RX-<MAC後4碼>`，服務含 CMD 寫入 / TEL 通知兩特徵，供 `ESP32_D1_mini_rc` 掃描配對；收發 JSON 命令與遙測。
-  - **模式 1 = 傳統藍牙（Classic BT / SPP server）**：伺服器名稱 `KKBOX-RX-BT`，供 `ESP32_D1_mini_rc_BT` 自動連線；以 16-byte 二進位協定接收遙控資料（轉成 kkbox 的 `throttle` 1000~2000 與 `setpoints` ±200 deg/s，限速 10Hz/5Hz 並每 500ms 心跳保活），並每 200ms 回送 16-byte 遙測幀（馬達 0~255 / 陀螺三軸 / 無人機編號）。
-  - 兩種模式皆與 WiFi 併存，不需切換網路。
+- 藍牙作為 AP/STA 以外的第三種連線方式，**模式互斥**（ESP32 只能用一個藍牙主機堆疊），由「系統狀態 → 藍芽管理」切換（`GET/POST /api/bt`，`action=mode`），設定存入 NVS 重開機沿用：
+  - **0 = BLE（NimBLE GATT server）**：廣播名稱 `KKBOX-RX-<MAC後4碼>`，服務含 CMD 寫入 / TEL 通知兩特徵，供 `ESP32_D1_mini_rc` 掃描配對；收發 JSON 命令與遙測。
+  - **1 = 傳統藍牙（Classic BT / SPP server）**：伺服器名稱 `KKBOX-RX-BT`，供 `ESP32_D1_mini_rc_BT` 自動連線；以 16-byte 二進位協定接收遙控資料（轉成 kkbox 的 `throttle` 1000~2000 與 `setpoints` ±200 deg/s，限速 10Hz/5Hz 並每 500ms 心跳保活），並每 200ms 回送 16-byte 遙測幀（馬達 0~255 / 陀螺三軸 / 無人機編號）。
+  - **2 = 關閉藍牙 Server**：不啟動任何藍牙堆疊（BLE 與 SPP 皆不開），需由網頁再次啟用。
+  - 三種模式皆與 WiFi 併存，不需切換網路。
 
 | WT32-ETH01  | 連接對象          | 說明                            |
 | ----------- | ----------------- | ------------------------------- |
@@ -439,7 +440,7 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 | GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）           |
 | GET/POST | `/api/pid`（僅遙控器）  | 三軸 PID（存本機 NVS，經目前通道下傳飛控板） |
 | GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                          |
-| GET/POST | `/api/bt`               | 藍牙狀態（GET：`mode`／`connected`／`name`／`rx`／`conns`）；POST `action=disconnect\|mode`（`mode`＝0 BLE／1 SPP，僅接收機可切換）；遙控器另有 `action=scan\|stop\|connect\|clear\|channel` |
+| GET/POST | `/api/bt`               | 藍牙管理（GET：`mode`（0 BLE／1 SPP／2 關閉）／`connected`／`name`／`rx`／`conns`）；POST `action=disconnect\|mode`（`mode`＝0/1/2，僅接收機可切換）；遙控器另有 `action=scan\|stop\|connect\|clear\|channel` |
 | —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）              |
 
 > 所有 `/api/*`（除 `login`/`logout`）需帶 Session Cookie 或 `X-Auth` Token，否則回 `401`。

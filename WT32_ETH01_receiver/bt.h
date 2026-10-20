@@ -7,9 +7,10 @@
 #include "settings.h"
 
 /* =============================================================
- * 接收機藍牙 Server (二擇一, 見 gSet.btMode)
+ * 接收機藍牙 Server (三擇一, 見 gSet.btMode)
  *   0 = BLE  (NimBLE) GATT 伺服器: 供 ESP32_D1_mini_rc 以 JSON 傳收
  *   1 = 傳統藍牙 (Classic BT / SPP): 供 ESP32_D1_mini_rc_BT 以 16-byte 協定
+ *   2 = 關閉 (不啟動任何藍牙堆疊)
  * -------------------------------------------------------------
  * BLE Service (BLE_SVC_UUID):
  *   - CMD 特徵 (BLE_CMD_UUID): RC 寫入命令 (write / write-no-response)
@@ -30,13 +31,19 @@ static uint32_t gBtRxLines   = 0;
 
 /* 是否啟動中 (供 /api/bt 顯示) */
 static inline bool btLinked() {
-  return (gSet.btMode == 1) ? gSppLinked : gBtConnected;
+  if (gSet.btMode == BT_MODE_SPP) return gSppLinked;
+  if (gSet.btMode == BT_MODE_BLE) return gBtConnected;
+  return false;
 }
 static inline uint32_t btRxLines() {
-  return (gSet.btMode == 1) ? gSppRxLines : gBtRxLines;
+  if (gSet.btMode == BT_MODE_SPP) return gSppRxLines;
+  if (gSet.btMode == BT_MODE_BLE) return gBtRxLines;
+  return 0;
 }
 static inline uint32_t btConnCount() {
-  return (gSet.btMode == 1) ? gSppConns : gBtConnCount;
+  if (gSet.btMode == BT_MODE_SPP) return gSppConns;
+  if (gSet.btMode == BT_MODE_BLE) return gBtConnCount;
+  return 0;
 }
 
 /* 由 web.h 定義: 收到 RC 一行命令 (JSON) */
@@ -111,24 +118,35 @@ static inline void bleShutdown() {
 }
 
 /* ---------- 依 gSet.btMode 啟動對應的藍牙 Server ---------- */
-static inline void btBegin() {
-  if (gSet.btMode == 1) sppBegin();
-  else                  bleBegin();
+/* 關閉目前模式的堆疊 (mode 為切換前的舊模式) */
+static inline void btStopActive(uint8_t mode) {
+  if (mode == BT_MODE_SPP) sppEnd();
+  else if (mode == BT_MODE_BLE) bleShutdown();
+}
+/* 啟動指定模式 (BT_MODE_OFF 不做任何事) */
+static inline bool btStartMode(uint8_t mode) {
+  if (mode == BT_MODE_SPP) return sppBegin();
+  if (mode == BT_MODE_BLE) return bleBegin();
+  Serial.println("[BT] 藍牙 Server 已關閉 (可由網頁啟用)");
+  return true;
 }
 
-/* 切換藍牙通道 (0 = BLE, 1 = 傳統藍牙 SPP); 失敗回 false 並還原原模式 */
+static inline void btBegin() {
+  btStartMode(gSet.btMode);
+}
+
+/* 切換藍牙通道 (0=BLE, 1=SPP, 2=關閉); 失敗回 false 並還原原模式 */
 static bool btSetMode(uint8_t mode) {
-  if (mode > 1) return false;
+  if (mode > BT_MODE_OFF) return false;
   if (mode == gSet.btMode) return true;
   uint8_t prev = gSet.btMode;
 
-  if (prev == 1) sppEnd(); else bleShutdown();
+  btStopActive(prev);
   gSet.btMode = mode;
-  bool ok = (mode == 1) ? sppBegin() : bleBegin();
-  if (!ok) {                       /* 還原 */
-    if (mode == 1) sppEnd(); else bleShutdown();
+  if (!btStartMode(mode)) {        /* 失敗: 還原 */
+    btStopActive(mode);
     gSet.btMode = prev;
-    if (prev == 1) sppBegin(); else bleBegin();
+    btStartMode(prev);
     return false;
   }
   settingsSaveBtMode();
@@ -137,14 +155,15 @@ static bool btSetMode(uint8_t mode) {
 
 /* 傳送一行 JSON (遙測 / ack) 給已連線的 RC */
 static inline void btSend(const String& line) {
-  if (gSet.btMode == 1) return;    /* SPP 端改由 sppLoop() 送 16-byte 遙測 */
+  if (gSet.btMode != BT_MODE_BLE) return;  /* SPP 由 sppLoop() 送 16-byte; 關閉則略過 */
   if (!gBtConnected || !gBtTelChr || line.length() == 0) return;
   gBtTelChr->setValue((const uint8_t*)line.c_str(), line.length());
   gBtTelChr->notify();
 }
 
 static inline void btDisconnectClient() {
-  if (gSet.btMode == 1) { sppDisconnect(); return; }
+  if (gSet.btMode == BT_MODE_SPP) { sppDisconnect(); return; }
+  if (gSet.btMode != BT_MODE_BLE) return;
   if (gBtServer && gBtConnected && gBtConnHandle != 0xFFFF) {
     gBtServer->disconnect(gBtConnHandle);
   }
@@ -152,7 +171,7 @@ static inline void btDisconnectClient() {
 
 /* NimBLE 為事件驅動; 傳統藍牙需輪詢收送 */
 static inline void btLoop() {
-  if (gSet.btMode == 1) sppLoop();
+  if (gSet.btMode == BT_MODE_SPP) sppLoop();
 }
 
 #endif

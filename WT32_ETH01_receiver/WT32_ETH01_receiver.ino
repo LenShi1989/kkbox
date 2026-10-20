@@ -5,8 +5,8 @@
  * 名稱 (Name):    WT32-ETH01 Receiver
  * ---------------------------------------------------------------
  * - 內建 LAN8720A RJ45 有線網路 + WiFi 無線網路 (可同時)
- * - 藍牙 Server (二擇一, 網頁可切換): BLE (NimBLE GATT) /
- *   傳統藍牙 (Classic BT SPP, 16-byte 協定)
+ * - 藍牙管理 (三擇一, 網頁可切換): BLE (NimBLE GATT) /
+ *   傳統藍牙 (Classic BT SPP, 16-byte 協定) / 關閉
  * - SPIFFS 網頁介面 (ESPAsyncWebServer) + WebSocket 即時雙向
  * - 與 KKBOX 飛控板以 Serial2 (GPIO5/GPIO17, 9600) 交換 JSON
  * - 網頁: 系統狀態 / 網路設定 / 馬達模式 / 使用者設定 / OTA

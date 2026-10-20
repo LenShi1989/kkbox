@@ -98,7 +98,7 @@
         </tbody>
       </table>
 
-      <h3>藍牙通道 (二擇一)</h3>
+      <h3>藍牙管理</h3>
       <div class="card">
         <table class="tbl">
           <tbody>
@@ -108,13 +108,14 @@
             <tr><th>收到封包</th><td id="bt-rx">-</td></tr>
           </tbody>
         </table>
-        <label class="inline"><input type="radio" name="btmode" value="0"> BLE（NimBLE，供 ESP32_D1_mini_rc）</label>
-        <label class="inline"><input type="radio" name="btmode" value="1"> 傳統藍牙 SPP（供 ESP32_D1_mini_rc_BT）</label>
+        <label class="inline"><input type="radio" name="btmode" value="0"> 藍牙通道切換：BLE（NimBLE，供 ESP32_D1_mini_rc）</label>
+        <label class="inline"><input type="radio" name="btmode" value="1"> 藍牙通道切換：傳統藍牙 SPP（供 ESP32_D1_mini_rc_BT）</label>
+        <label class="inline"><input type="radio" name="btmode" value="2"> 關閉藍牙 Server（不啟動任何藍牙堆疊）</label>
         <div class="row">
-          <button id="btmode-save">切換通道</button>
+          <button id="btmode-save">套用</button>
           <button id="bt-disconn" class="ghost">中斷目前連線</button>
         </div>
-        <p class="muted">兩者無法同時啟動（ESP32 只有一個藍牙堆疊），切換期間約 1~2 秒，同一時間僅能有一個遙控器連線。</p>
+        <p class="muted">BLE 與 SPP 兩者無法同時啟動（ESP32 只有一個藍牙堆疊），同一時間僅能有一個遙控器連線；切換或關閉期間約 1~2 秒。設定會存入 NVS，重開機後沿用。</p>
       </div>
 
       <h3>飛控遙測 (即時)</h3>

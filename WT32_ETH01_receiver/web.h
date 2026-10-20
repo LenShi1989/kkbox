@@ -218,11 +218,13 @@ static void webSetup() {
     else sendErr(r, "bad command");
   });
 
-  /* ---- 藍牙 (BLE / SPP) 狀態 / 切換通道 ---- */
+  /* ---- 藍牙管理 (BLE / SPP / 關閉) 狀態 / 切換 / 中斷 ---- */
   server.on("/api/bt", HTTP_GET, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;
     String s = "{\"mode\":" + String(gSet.btMode) +
-               ",\"name\":\"" + (gSet.btMode == 1 ? String(SPP_NAME) : btName()) + "\"" +
+               ",\"name\":\"" +
+               (gSet.btMode == BT_MODE_OFF ? String("-")
+                : gSet.btMode == BT_MODE_SPP ? String(SPP_NAME) : btName()) + "\"" +
                ",\"connected\":" + String(btLinked() ? 1 : 0) +
                ",\"rx\":" + String(btRxLines()) +
                ",\"conns\":" + String(btConnCount()) + "}";

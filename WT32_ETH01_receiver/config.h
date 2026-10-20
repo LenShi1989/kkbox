@@ -54,10 +54,13 @@
 #define BLE_CMD_UUID    "6b6f0002-4b4b-4000-8000-00805f9b34fb"   /* RC -> RX (write) */
 #define BLE_TEL_UUID    "6b6f0003-4b4b-4000-8000-00805f9b34fb"   /* RX -> RC (notify) */
 
-/* ---------- 藍牙通道 (二擇一) ---------- */
+/* ---------- 藍牙通道 (三擇一) ---------- */
 /* ESP32 只能用一個藍牙主機堆疊: NimBLE (BLE) 與 Classic BT (SPP) 無法同開,
- * 故以 NVS 設定 + 網頁切換。0 = BLE, 1 = 傳統藍牙 SPP。 */
-#define DEF_BT_MODE 0
+ * 故以 NVS 設定 + 網頁切換。0 = BLE, 1 = 傳統藍牙 SPP, 2 = 關閉 (不啟動)。 */
+#define BT_MODE_BLE 0
+#define BT_MODE_SPP 1
+#define BT_MODE_OFF 2
+#define DEF_BT_MODE BT_MODE_BLE
 
 /* 傳統藍牙 SPP 伺服器名稱 (ESP32_D1_mini_rc_BT 預設連線目標) */
 #define SPP_NAME "KKBOX-RX-BT"

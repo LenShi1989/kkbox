@@ -45,7 +45,7 @@ struct Settings {
   /* 裝置連結 Token (供 ESP32 D1 mini RC 連線 WS 用) */
   String deviceToken;
 
-  /* 藍牙通道: 0 = BLE (NimBLE), 1 = 傳統藍牙 (SPP) */
+  /* 藍牙通道: 0 = BLE (NimBLE), 1 = 傳統藍牙 (SPP), 2 = 關閉 */
   uint8_t btMode;
 };
 
@@ -76,6 +76,7 @@ static inline void settingsLoad() {
     gPrefs.putString("dtok", gSet.deviceToken);
   }
   gSet.btMode = gPrefs.getUChar("btml", DEF_BT_MODE);
+  if (gSet.btMode > BT_MODE_OFF) gSet.btMode = DEF_BT_MODE;
 }
 
 static inline void settingsSaveWifi() {
