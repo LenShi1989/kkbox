@@ -31,6 +31,7 @@
       <a data-page="bt">藍牙連線</a>
       <a data-page="pid">PID 設定</a>
       <a data-page="joy">模擬搖桿</a>
+      <a data-page="esc">馬達校正</a>
       <a data-page="ota">OTA 更新</a>
       <a data-page="user">使用者設定</a>
     </nav>
@@ -240,6 +241,54 @@
           <div class="muted small">瀏覽器即時連線：<span id="ws-state">未建立</span> ・ 飛控最後回應：<span id="kk-ack">-</span></div>
           <div class="muted small">已送出命令：<span id="tx-info">0 筆</span></div>
         </div>
+      </div>
+    </section>
+
+    <!-- 馬達校正 (ESC 行程校正) -->
+    <section id="page-esc" class="page">
+      <h2>馬達校正</h2>
+      <p class="muted">電調 (ESC) 油門行程校正。飛控板僅維持上鎖，實際高低點由你的實體操作完成，遙控器僅提供步驟提示。</p>
+
+      <div class="card">
+        <div class="row">
+          <span class="k">飛控板狀態</span><span id="esc-armed">-</span>
+        </div>
+        <div class="row">
+          <button id="esc-safe" class="danger">確保上鎖 (DISARM)</button>
+          <span class="muted small">校正全程飛控板必須處於上鎖，馬達不會轉動。</span>
+        </div>
+      </div>
+
+      <h3>校正步驟</h3>
+      <ol class="esc-steps">
+        <li>
+          <b>遙控器油門推到最高點</b>
+          <p class="muted small">將油門搖桿推至最高 (2000us) 並保持。</p>
+        </li>
+        <li>
+          <b>給電調通電</b>
+          <p class="muted small">接上動力電池。請勿同時透過 USB 對飛控強行供電，或依飛控手冊規範操作。</p>
+        </li>
+        <li>
+          <b>聽取提示音</b>
+          <p class="muted small">電調發出開機音後，會再發出確認「最高油門」的音效（通常數聲嘟嘟）。</p>
+        </li>
+        <li>
+          <b>迅速降低油門</b>
+          <p class="muted small">聽到最高油門確認音後，立刻將油門搖桿拉到最低點 (1000us)。</p>
+        </li>
+        <li>
+          <b>確認結束</b>
+          <p class="muted small">電調發出長鳴或確認音，代表最低油門設定完成。之後斷電、重新上電測試馬達同步性。</p>
+        </li>
+      </ol>
+
+      <div class="card">
+        <div class="row">
+          <button id="esc-timer" class="ghost">開始計時 (倒數 3 秒)</button>
+          <span class="k" id="esc-count">-</span>
+        </div>
+        <p class="muted small">按「開始計時」後，依上列步驟操作：先推最高油門 → 上電 → 聽確認音 → 拉最低油門。</p>
       </div>
     </section>
 

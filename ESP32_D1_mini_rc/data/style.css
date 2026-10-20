@@ -108,6 +108,10 @@ body.nav-open .hamburger span:nth-child(3){transform:translateY(-6px) rotate(-45
 .page{display:none}
 .page.active{display:block}
 
+.esc-steps{margin:0 0 4px;padding-left:22px}
+.esc-steps li{margin:10px 0;line-height:1.45}
+.esc-steps li p{margin:2px 0 0}
+
 /* ---------- 卡片 / 網格 ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}

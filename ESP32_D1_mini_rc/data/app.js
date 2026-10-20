@@ -96,6 +96,7 @@ $('nav').addEventListener('click', (e) => {
   if (a.dataset.page === 'bt') loadBt();
   if (a.dataset.page === 'pid') loadPid();
   if (a.dataset.page === 'user') loadUser();
+  if (a.dataset.page === 'esc') loadEsc();
 });
 
 /* ---------- 狀態 ---------- */
@@ -151,6 +152,7 @@ function applyTelemetry(t) {
   $('t-motor').textContent = (t.motor || []).join(' ');
   $('joy-state').textContent = t.armed ? '已解鎖 (ARMED)' : '已連線 (待命)';
   if (t.hold !== undefined) setHold(!!t.hold);
+  loadEsc();
 }
 
 async function loadFs() {
@@ -465,6 +467,33 @@ setInterval(() => {
 setInterval(() => {
   if (armedNow) sendCmd({ cmd: 'ping' });
 }, 500);
+
+/* ---------- 馬達校正 (ESC 行程校正) 導引 ---------- */
+function loadEsc() {
+  const e = $('esc-armed');
+  if (!e) return;
+  e.textContent = armedNow ? '已解鎖 (請先上鎖)' : '上鎖 (可校正)';
+  e.style.color = armedNow ? 'var(--warn)' : 'var(--ok)';
+}
+$('esc-safe').addEventListener('click', () => sendOnce({ cmd: 'disarm' }));
+
+let escTimerId = null;
+$('esc-timer').addEventListener('click', () => {
+  if (escTimerId) { clearInterval(escTimerId); escTimerId = null; }
+  sendOnce({ cmd: 'disarm' });
+  let n = 3;
+  $('esc-count').textContent = n + ' 秒';
+  escTimerId = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(escTimerId); escTimerId = null;
+      $('esc-count').textContent = '開始！推最高油門';
+      toast('開始！把油門推至最高', 'ok');
+    } else {
+      $('esc-count').textContent = n + ' 秒';
+    }
+  }, 1000);
+});
 
 /* ---------- 啟動 ---------- */
 function start() {
