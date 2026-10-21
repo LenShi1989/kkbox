@@ -100,7 +100,10 @@ static inline void ledWrite(uint8_t on) {
 #define KK_FRAME 0   /* 0 = Quad-X, 1 = Quad-+ */
 
 /* ---------- 控制回路 ---------- */
-#define CTRL_HZ        200
+/* 控制迴路執行頻率 = 陀螺取樣 / PID 更新 / 馬達 PWM 輸出更新頻率。
+ * 越高反應越快但越吃 8MHz MCU 時間; 越低馬達轉速變動越慢越柔。
+ * 200Hz->100Hz: 更新週期由 5ms 變 10ms, 轉速變動頻率減半 (反應較柔, 穩定性可能下降)。 */
+#define CTRL_HZ        100      /* PID 更新頻率 100Hz, 10ms */
 #define CTRL_PERIOD_US (1000000UL / CTRL_HZ)
 #define FAILSAFE_MS    2000
 
@@ -110,7 +113,9 @@ static inline void ledWrite(uint8_t on) {
 #define GYRO_LPF            0.6f   /* 低通濾波係數 0~1 */
 
 /* ---------- PID 預設 ---------- */
-#define PID_OUT_LIMIT 300.0f
+/* PID 修正量上限 (us): roll/pitch/yaw 各自加在油門上的修正會被夾在此範圍內。
+ * 越小修正幅度越小、動作越柔和; 300us->100us 縮為原本 1/3。 */
+#define PID_OUT_LIMIT 100.0f  /* PID 變動幅度上限 100us */
 #define PID_I_LIMIT   50.0f
 #define PID_ROLL_KP   3.0f
 #define PID_ROLL_KI   0.08f   /* 自動配平 (auto-trim), 見下方 TRIM_DEADBAND */
