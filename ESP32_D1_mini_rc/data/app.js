@@ -468,31 +468,37 @@ setInterval(() => {
   if (armedNow) sendCmd({ cmd: 'ping' });
 }, 500);
 
-/* ---------- 馬達校正 (ESC 行程校正) 導引 ---------- */
+/* ---------- 馬達校正 (ESC 行程校正) ---------- */
 function loadEsc() {
   const e = $('esc-armed');
   if (!e) return;
-  e.textContent = armedNow ? '已解鎖 (請先上鎖)' : '上鎖 (可校正)';
+  e.textContent = armedNow ? '已解鎖' : '上鎖';
   e.style.color = armedNow ? 'var(--warn)' : 'var(--ok)';
 }
-$('esc-safe').addEventListener('click', () => sendOnce({ cmd: 'disarm' }));
-
-let escTimerId = null;
-$('esc-timer').addEventListener('click', () => {
-  if (escTimerId) { clearInterval(escTimerId); escTimerId = null; }
+$('esc-arm').addEventListener('click', () => {
+  sendOnce({ cmd: 'nopid', on: 1 });   /* 校正前先關閉 PID */
+  sendOnce({ cmd: 'arm' });
+});
+$('esc-disarm').addEventListener('click', () => {
   sendOnce({ cmd: 'disarm' });
-  let n = 3;
-  $('esc-count').textContent = n + ' 秒';
-  escTimerId = setInterval(() => {
-    n--;
-    if (n <= 0) {
-      clearInterval(escTimerId); escTimerId = null;
-      $('esc-count').textContent = '開始！推最高油門';
-      toast('開始！把油門推至最高', 'ok');
-    } else {
-      $('esc-count').textContent = n + ' 秒';
-    }
-  }, 1000);
+  sendOnce({ cmd: 'nopid', on: 0 });   /* 離開校正, 恢復 PID */
+});
+
+/* 固定轉速: 直接寫入 joyThr (與模擬搖桿共用), 由 50ms 迴圈持續送出, 飛控板不做 PID */
+$('esc-thr').addEventListener('input', (e) => { $('esc-thr-v').textContent = e.target.value; });
+$('esc-apply').addEventListener('click', () => {
+  joyThr = +$('esc-thr').value;
+  $('joy-thr').value = joyThr; $('joy-thr-v').textContent = joyThr;
+  dirty = true;
+  sendOnce({ cmd: 'nopid', on: 1 });
+  toast('固定轉速 ' + joyThr + 'us 已套用 (PID 已關閉)', 'ok');
+});
+$('esc-stop').addEventListener('click', () => {
+  joyThr = 1000;
+  $('esc-thr').value = 1000; $('esc-thr-v').textContent = '1000';
+  $('joy-thr').value = 1000; $('joy-thr-v').textContent = '1000';
+  dirty = true;
+  toast('已停止輸出 (1000us)', 'ok');
 });
 
 /* ---------- 啟動 ---------- */

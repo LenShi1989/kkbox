@@ -247,23 +247,36 @@
     <!-- 馬達校正 (ESC 行程校正) -->
     <section id="page-esc" class="page">
       <h2>馬達校正</h2>
-      <p class="muted">電調 (ESC) 油門行程校正。飛控板僅維持上鎖，實際高低點由你的實體操作完成，遙控器僅提供步驟提示。</p>
+      <p class="muted">電調 (ESC) 油門行程校正。手動解鎖後以固定轉速輸出到馬達，不做 PID 姿態控制。</p>
 
       <div class="card">
         <div class="row">
           <span class="k">飛控板狀態</span><span id="esc-armed">-</span>
         </div>
         <div class="row">
-          <button id="esc-safe" class="danger">確保上鎖 (DISARM)</button>
-          <span class="muted small">校正全程飛控板必須處於上鎖，馬達不會轉動。</span>
+          <button id="esc-arm">解鎖 ARM</button>
+          <button id="esc-disarm" class="danger">上鎖 DISARM</button>
         </div>
+        <p class="muted small">校正期間飛控板保持上鎖狀態，馬達不會轉動。</p>
+      </div>
+
+      <h3>固定轉速 (1000~2000us)</h3>
+      <div class="card">
+        <label>轉速：<b id="esc-thr-v">1000</b> us
+          <input type="range" id="esc-thr" min="1000" max="2000" value="1000" step="10">
+        </label>
+        <div class="row">
+          <button id="esc-apply">套用固定轉速</button>
+          <button id="esc-stop" class="ghost">停止輸出 (1000us)</button>
+        </div>
+        <p class="muted small">套用後遙控器會持續以該固定值送油門命令；飛控板不套用 PID。停止即回到 1000us。</p>
       </div>
 
       <h3>校正步驟</h3>
       <ol class="esc-steps">
         <li>
-          <b>遙控器油門推到最高點</b>
-          <p class="muted small">將油門搖桿推至最高 (2000us) 並保持。</p>
+          <b>設定最高轉速並解鎖</b>
+          <p class="muted small">將固定轉速拉到 2000us → 按「套用固定轉速」→ 按「解鎖 ARM」，馬達將以固定轉速輸出。</p>
         </li>
         <li>
           <b>給電調通電</b>
@@ -275,21 +288,13 @@
         </li>
         <li>
           <b>迅速降低油門</b>
-          <p class="muted small">聽到最高油門確認音後，立刻將油門搖桿拉到最低點 (1000us)。</p>
+          <p class="muted small">聽到最高油門確認音後，立刻把固定轉速拉到 1000us 並套用（或按「停止輸出」）。</p>
         </li>
         <li>
           <b>確認結束</b>
-          <p class="muted small">電調發出長鳴或確認音，代表最低油門設定完成。之後斷電、重新上電測試馬達同步性。</p>
+          <p class="muted small">電調發出長鳴或確認音，代表最低油門設定完成。之後按「上鎖」、斷電，重新上電測試馬達同步性。</p>
         </li>
       </ol>
-
-      <div class="card">
-        <div class="row">
-          <button id="esc-timer" class="ghost">開始計時 (倒數 3 秒)</button>
-          <span class="k" id="esc-count">-</span>
-        </div>
-        <p class="muted small">按「開始計時」後，依上列步驟操作：先推最高油門 → 上電 → 聽確認音 → 拉最低油門。</p>
-      </div>
     </section>
 
     <!-- OTA -->

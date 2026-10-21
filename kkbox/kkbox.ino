@@ -43,6 +43,7 @@ float setYaw   = 0.0f;
 long  throttleUs = ESC_MIN;
 bool  armed = false;
 bool  hold  = false;         /* 定高 (油門保持): 鎖定當前油門 */
+bool  pidBypass = false;     /* 馬達校正: 略過 PID, 馬達僅輸出固定油門 */
 uint8_t motorCount = MOTOR_COUNT;
 
 uint8_t  ledMode = 2;                 /* 0=off 1=on 2=blink */
@@ -86,7 +87,7 @@ static void controlStep(float dt) {
   gyroNow = gyro.read();
 
   float rOut = 0.0f, pOut = 0.0f, yOut = 0.0f;
-  if (armed) {
+  if (armed && !pidBypass) {
     /* 自動配平: 僅在 roll/pitch 搖桿置中時累積積分, 依陀螺殘餘轉速緩慢學習
      * 配平量; 搖桿離開中央即凍結 (保留配平值)。yaw 積分維持常開。 */
     bool centered = setRoll  < TRIM_DEADBAND && setRoll  > -TRIM_DEADBAND &&
@@ -188,8 +189,6 @@ static void handleCommand(const char* s) {
       if      (!strcmp(mode, "on"))    ledMode = 1;
       else if (!strcmp(mode, "off"))   ledMode = 0;
       else if (!strcmp(mode, "blink")) ledMode = 2;
-    } else {
-      ledMode = jInt(s, "value", 0) ? 1 : 0;
     }
     Serial.print(F("{\"ack\":\"led\",\"mode\":"));
     Serial.print(ledMode);
@@ -209,6 +208,10 @@ static void handleCommand(const char* s) {
   } else if (!strcmp(cmd, "calibrate")) {
     gyro.calibrate(GYRO_CAL_SAMPLES);
     ackCmd("calibrate");
+
+  } else if (!strcmp(cmd, "nopid")) {
+    pidBypass = jInt(s, "on", 0) ? true : false;
+    ackCmd("nopid");
 
   } else if (!strcmp(cmd, "throttle")) {
     long v = jInt(s, "value", throttleUs);
