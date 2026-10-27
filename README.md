@@ -4,33 +4,33 @@
 
 ---
 
-| 外部端子 / 模組標示 | GPIO編號 | Pin 腳編號   | 功能與說明                                         |
-| ------------------- | -------- | ------------ | -------------------------------------------------- |
-| VCC                 | N/A      | 4,6          | DC 5V                                              |
-| GND                 | N/A      | 3,5          | 接地                                               |
-| RS232-RX            | 18       | 32           | RS232 RX(9600 bps, 8N1, SoftwareSerial)            |
-| RS232-TX            | 17       | 31           | RS232 TX(9600 bps, 8N1, 硬體 UART TXD)             |
-| Roll Gain           | 11       | 26           | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
-| Pitch Gain          | 12       | 27           | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益） |
-| Yaw Gain            | 13       | 28           | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）     |
-| Yaw 陀螺儀          | 8        | 23           | Gyro Yaw                                           |
-| Pitch 陀螺儀        | 9        | 24           | Gyro pitch                                         |
-| Roll 陀螺儀         | 10       | 25           | Gyro roll                                          |
-| Motor 1 (M1)        | 2        | 14           | 第 1 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 2 (M2)        | 1        | 13           | 第 2 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 3 (M3)        | 0        | 12           | 第 3 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 4 (M4)        | 23       | 11           | 第 4 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 5 (M5)        | 22       | 10           | 第 5 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 6 (M6)        | 21       | 9            | 第 6 號馬達 / 電子調速器（ESC）控制輸出            |
-| Motor 7 (M7)        | 19       | 1            | 第 7 號馬達 / 電子調速器（ESC）控制輸出            |
+| 外部端子 / 模組標示 | GPIO編號 | Pin 腳編號   | 功能與說明                                                          |
+| ------------------- | -------- | ------------ | ------------------------------------------------------------------- |
+| VCC                 | N/A      | 4,6          | DC 5V                                                               |
+| GND                 | N/A      | 3,5          | 接地                                                                |
+| RS232-RX            | 18       | 32           | RS232 RX(9600 bps, 8N1, SoftwareSerial)                             |
+| RS232-TX            | 17       | 31           | RS232 TX(9600 bps, 8N1, 硬體 UART TXD)                              |
+| Roll Gain           | 11       | 26           | 滾轉軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益）                  |
+| Pitch Gain          | 12       | 27           | 俯仰軸壓電陀螺儀類比訊號輸入（經可變電阻調整增益）                  |
+| Yaw Gain            | 13       | 28           | 偏航軸陀螺儀類比訊號輸入（經可變電阻調整增益）                      |
+| Yaw 陀螺儀          | 8        | 23           | Gyro Yaw                                                            |
+| Pitch 陀螺儀        | 9        | 24           | Gyro pitch                                                          |
+| Roll 陀螺儀         | 10       | 25           | Gyro roll                                                           |
+| Motor 1 (M1)        | 2        | 14           | 第 1 號馬達 / 電子調速器（ESC）控制輸出                             |
+| Motor 2 (M2)        | 1        | 13           | 第 2 號馬達 / 電子調速器（ESC）控制輸出                             |
+| Motor 3 (M3)        | 0        | 12           | 第 3 號馬達 / 電子調速器（ESC）控制輸出                             |
+| Motor 4 (M4)        | 23       | 11           | 第 4 號馬達 / 電子調速器（ESC）控制輸出                             |
+| Motor 5 (M5)        | 22       | 10           | 第 5 號馬達 / 電子調速器（ESC）控制輸出                             |
+| Motor 6 (M6)        | 21       | 9            | 第 6 號馬達 / 電子調速器（ESC）控制輸出                             |
+| Motor 7 (M7)        | 19       | 1            | 第 7 號馬達 / 電子調速器（ESC）控制輸出                             |
 | Motor 8 (M8)        | 20       | 2            | 第 8 號馬達 / ESC 控制輸出 (D4/PD4；原 GPIO7/PB7=XTAL2 無法當 GPIO) |
 | LED1                | 6        | 7 板載LED1燈 |
-| ISP 燒錄器接腳(1)   | 4        | 16           | MISO                                               |
-| ISP 燒錄器接腳(2)   | N/A      | 4,6          | VCC 5V                                             |
-| ISP 燒錄器接腳(3)   | 5        | 17           | SCK                                                |
-| ISP 燒錄器接腳(4)   | 3        | 15           | MOSI                                               |
-| ISP 燒錄器接腳(5)   | 14       | 29           | RESET                                              |
-| ISP 燒錄器接腳(6)   | N/A      | 3,5          | 接地                                               |
+| ISP 燒錄器接腳(1)   | 4        | 16           | MISO                                                                |
+| ISP 燒錄器接腳(2)   | N/A      | 4,6          | VCC 5V                                                              |
+| ISP 燒錄器接腳(3)   | 5        | 17           | SCK                                                                 |
+| ISP 燒錄器接腳(4)   | 3        | 15           | MOSI                                                                |
+| ISP 燒錄器接腳(5)   | 14       | 29           | RESET                                                               |
+| ISP 燒錄器接腳(6)   | N/A      | 3,5          | 接地                                                                |
 
 ---
 
@@ -177,11 +177,11 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 
 kkbox 飛控板上的 **LED1 狀態燈**（PB6 / Arduino pin 13）用來即時顯示飛控狀態，並可由遠端切換模式：
 
-| 模式 | 命令 | 顯示 |
-| --- | --- | --- |
+| 模式            | 命令                           | 顯示                                                                           |
+| --------------- | ------------------------------ | ------------------------------------------------------------------------------ |
 | `blink`（預設） | `{"cmd":"led","mode":"blink"}` | **未解鎖**：慢閃（約 2Hz，500ms 週期）；**已解鎖**：快閃（約 20Hz，25ms 週期） |
-| `on` | `{"cmd":"led","mode":"on"}` | 恆亮 |
-| `off` | `{"cmd":"led","mode":"off"}` | 恆暗 |
+| `on`            | `{"cmd":"led","mode":"on"}`    | 恆亮                                                                           |
+| `off`           | `{"cmd":"led","mode":"off"}`   | 恆暗                                                                           |
 
 - 開機預設為 `blink`：可由閃爍速度一眼判斷是否已解鎖（快閃＝已解鎖，慢閃＝上鎖）。
 - LED 模式與狀態可由接收機或遙控器網頁的指令轉送設定，指令等同 `{"cmd":"led","mode":"on"}`（或 `{"cmd":"led","value":1}`）。
@@ -261,6 +261,7 @@ kkbox 飛控板 (ATmega168)
 - 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
 
 > PID 設定頁已**移至遙控器**（見下方 ESP32 D1 mini 遙控器）。
+
 - 藍牙作為 AP/STA 以外的第三種連線方式，**模式互斥**（ESP32 只能用一個藍牙主機堆疊），由「系統狀態 → 藍芽管理」切換（`GET/POST /api/bt`，`action=mode`），設定存入 NVS 重開機沿用：
   - **0 = BLE（NimBLE GATT server）**：廣播名稱 `KKBOX-RX-<MAC後4碼>`，服務含 CMD 寫入 / TEL 通知兩特徵，供 `ESP32_D1_mini_rc` 掃描配對；收發 JSON 命令與遙測。
   - **1 = 傳統藍牙（Classic BT / SPP server）**：伺服器名稱 `KKBOX-RX-BT`，供 `ESP32_D1_mini_rc_BT` 自動連線；以 16-byte 二進位協定接收遙控資料（轉成 kkbox 的 `throttle` 1000~2000 與 `setpoints` ±200 deg/s，限速 10Hz/5Hz 並每 500ms 心跳保活），並每 200ms 回送 16-byte 遙測幀（馬達 0~255 / 陀螺三軸 / 無人機編號）。
@@ -311,13 +312,13 @@ Y   0.8        1460
 - 開機流程：轉 VRC1 選無人機 ID → 按下 SW1 確認 → 按住 SW1 期間校正搖桿 → 放開 SW1 結束；**按住 SW2 開機可跳過**（沿用已存的 ID/校正值）。
 - 序列埠（115200）指令：`help` / `status` / `sc`（掃描）/ `sn <name>`（Server 名稱）/ `sa <mac>`（Server MAC）/ `sv`（儲存並重連）/ `id` / `fly` / `cal`。
 
-| ESP32 D1 mini | 連接對象        | 說明                     |
-| ------------- | --------------- | ------------------------ |
-| GPIO39/35/33/34 | VTX/VTY/VPIT/VROL | 四軸搖桿 ADC            |
-| GPIO13/25/32/12 | VRC1~4          | 可變電阻                 |
-| GPIO10/18/19/23 | SW1~4           | 開關（INPUT_PULLUP，LOW=ON） |
-| GPIO17 (SDA) / GPIO16 (SCL) | SSD1306 | I2C（沿用測試碼接線） |
-| GPIO2          | 板上 LED        | 連線指示（未連線閃較快） |
+| ESP32 D1 mini               | 連接對象          | 說明                         |
+| --------------------------- | ----------------- | ---------------------------- |
+| GPIO39/35/33/34             | VTX/VTY/VPIT/VROL | 四軸搖桿 ADC                 |
+| GPIO13/25/32/12             | VRC1~4            | 可變電阻                     |
+| GPIO10/18/19/23             | SW1~4             | 開關（INPUT_PULLUP，LOW=ON） |
+| GPIO17 (SDA) / GPIO16 (SCL) | SSD1306           | I2C（沿用測試碼接線）        |
+| GPIO2                       | 板上 LED          | 連線指示（未連線閃較快）     |
 
 > 注意：SW1 = GPIO10 在多數 ESP32-WROOM 模組屬 Flash 腳；若開機異常請改 `config.h` 的 `PIN_SW1` 並同步接線。
 
@@ -426,22 +427,22 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 
 ### 主要 REST API（兩裝置共通，除註明外）
 
-| 方法     | 路徑                    | 說明                                        |
-| -------- | ----------------------- | ------------------------------------------- |
-| POST     | `/api/login`            | `user`,`pass` → `{token}`；設 Cookie `sess` |
-| POST     | `/api/logout`           | 登出                                        |
-| GET      | `/api/status`           | 系統/網路/連線狀態                          |
-| GET      | `/api/telemetry`        | 最新飛控遙測                                |
-| POST     | `/api/command`          | `cmd`＝JSON 命令字串，轉送飛控板            |
-| GET      | `/api/fs`               | SPIFFS 容量與檔案清單                       |
-| GET      | `/api/scan`             | WiFi 掃描                                   |
-| POST     | `/api/wifi`             | `ssid`,`pass` 或 `action=clear`             |
-| GET/POST | `/api/user`             | 帳號設定（POST 需 `cur` 目前密碼）          |
-| GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）           |
-| GET/POST | `/api/pid`（僅遙控器）  | 三軸 PID（存本機 NVS，經目前通道下傳飛控板） |
-| GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                          |
+| 方法     | 路徑                    | 說明                                                                                                                                                                                                          |
+| -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST     | `/api/login`            | `user`,`pass` → `{token}`；設 Cookie `sess`                                                                                                                                                                   |
+| POST     | `/api/logout`           | 登出                                                                                                                                                                                                          |
+| GET      | `/api/status`           | 系統/網路/連線狀態                                                                                                                                                                                            |
+| GET      | `/api/telemetry`        | 最新飛控遙測                                                                                                                                                                                                  |
+| POST     | `/api/command`          | `cmd`＝JSON 命令字串，轉送飛控板                                                                                                                                                                              |
+| GET      | `/api/fs`               | SPIFFS 容量與檔案清單                                                                                                                                                                                         |
+| GET      | `/api/scan`             | WiFi 掃描                                                                                                                                                                                                     |
+| POST     | `/api/wifi`             | `ssid`,`pass` 或 `action=clear`                                                                                                                                                                               |
+| GET/POST | `/api/user`             | 帳號設定（POST 需 `cur` 目前密碼）                                                                                                                                                                            |
+| GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）                                                                                                                                                                             |
+| GET/POST | `/api/pid`（僅遙控器）  | 三軸 PID（存本機 NVS，經目前通道下傳飛控板）                                                                                                                                                                  |
+| GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                                                                                                                                                                                            |
 | GET/POST | `/api/bt`               | 藍牙管理（GET：`mode`（0 BLE／1 SPP／2 關閉）／`connected`／`name`／`rx`／`conns`）；POST `action=disconnect\|mode`（`mode`＝0/1/2，僅接收機可切換）；遙控器另有 `action=scan\|stop\|connect\|clear\|channel` |
-| —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）              |
+| —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）                                                                                                                                                                                |
 
 > 所有 `/api/*`（除 `login`/`logout`）需帶 Session Cookie 或 `X-Auth` Token，否則回 `401`。
 
@@ -487,3 +488,34 @@ USB裝置:
 
 - Auto
   - 開始燒錄
+
+---
+
+# 安裝 MiniCore（不會直接改寫晶片）
+
+官方專案：MiniCore GitHub。MiniCore 支援 ATmega168 的 P、PA 等版本，並相容 Arduino IDE 1.8.x。
+GitHub+1
+
+1. 開啟 Arduino IDE 1.8.19。
+2. 點選「檔案 → 偏好設定」。
+3. 在「其他開發板管理員網址」加入：
+
+```txt
+https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
+```
+
+4. 點選「工具 → 開發板 → 開發板管理員」。
+5. 搜尋 MiniCore，安裝。
+6. 安裝完成後重新啟動 Arduino IDE。
+   以上僅安裝開發板定義與工具，不會因此自動修改 KK 飛控板的 Flash 或 Fuse。
+
+# KKmulticontroller V5.5 的設定
+
+在 Arduino IDE 中，選擇「工具」選單，依序設定：
+
+| 選項              | 設定                     |
+| ----------------- | ------------------------ |
+| Board             | MiniCore → ATmega168     |
+| Variant／晶片版本 | ATmega168P（若選單提供） |
+| Clock             | 必須符合飛控板實際時脈   |
+| Programmer        | AVRISP mkII              |

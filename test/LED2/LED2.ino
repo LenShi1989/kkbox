@@ -1,10 +1,9 @@
-
-
 #define LED1_PORT PORTB
 #define LED1_DDR DDRB
 #define LED1_BITN PB6
 
 #define LED1_PIN 6
+#define delay_time 100
 
 void setup()
 {
@@ -23,10 +22,10 @@ void loop()
     // LED1 亮
     LED1_PORT |= _BV(LED1_BITN);
     Serial.println("LED1 ON");
-    delay(1000);
+    delay(delay_time);
 
     // LED1 滅
     LED1_PORT &= ~_BV(LED1_BITN);
     Serial.println("LED1 OFF");
-    delay(1000);
+    delay(delay_time);
 }
