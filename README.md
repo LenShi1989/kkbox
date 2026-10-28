@@ -16,14 +16,14 @@
 | Yaw 陀螺儀          | 8        | 23           | Gyro Yaw                                                            |
 | Pitch 陀螺儀        | 9        | 24           | Gyro pitch                                                          |
 | Roll 陀螺儀         | 10       | 25           | Gyro roll                                                           |
-| Motor 1 (M1)        | 2        | 14           | 第 1 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 2 (M2)        | 1        | 13           | 第 2 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 3 (M3)        | 0        | 12           | 第 3 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 4 (M4)        | 23       | 11           | 第 4 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 5 (M5)        | 22       | 10           | 第 5 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 6 (M6)        | 21       | 9            | 第 6 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 7 (M7)        | 19       | 1            | 第 7 號馬達 / 電子調速器（ESC）控制輸出                             |
-| Motor 8 (M8)        | 20       | 2            | 第 8 號馬達 / ESC 控制輸出 (D4/PD4；原 GPIO7/PB7=XTAL2 無法當 GPIO) |
+| Motor 1 (M1)        | 2        | 14           | 第 1 號馬達 / ESC 輸出（Quad-X：左前 FL，CCW）                      |
+| Motor 2 (M2)        | 1        | 13           | 第 2 號馬達 / ESC 輸出（Quad-X：右前 FR，CW）                       |
+| Motor 3 (M3)        | 0        | 12           | 第 3 號馬達 / ESC 輸出（Quad-X：右後 RR，CCW）                      |
+| Motor 4 (M4)        | 23       | 11           | 第 4 號馬達 / ESC 輸出（Quad-X：左後 RL，CW）                       |
+| Motor 5 (M5)        | 22       | 10           | 第 5 號馬達 / ESC 輸出（X8：左前 FL 下槳，CW）                      |
+| Motor 6 (M6)        | 21       | 9            | 第 6 號馬達 / ESC 輸出（X8：右前 FR 下槳，CCW）                     |
+| Motor 7 (M7)        | 19       | 1            | 第 7 號馬達 / ESC 輸出（X8：右後 RR 下槳，CW）                      |
+| Motor 8 (M8)        | 20       | 2            | 第 8 號馬達 / ESC 輸出（X8：左後 RL 下槳，CCW；D4/PD4）             |
 | LED1                | 6        | 7 板載LED1燈 |
 | ISP 燒錄器接腳(1)   | 4        | 16           | MISO                                                                |
 | ISP 燒錄器接腳(2)   | N/A      | 4,6          | VCC 5V                                                              |
@@ -166,13 +166,39 @@ GPIO 編號 → ATmega168 埠 → Arduino 腳位（詳見 `kkbox/config.h`）：
 ## 馬達模式 (4 / 8) 與定高
 
 - **馬達模式**：開機預設 4 槳，可用 `{"cmd":"motors","count":8}` 執行中切換為 8 槳 (X8 同軸)。
-  - 4 槳：Quad-X（`KK_FRAME=0`，預設）或 Quad-+（`KK_FRAME=1`，編譯期）。
-  - 8 槳 X8 同軸：4 臂、每臂上下兩顆反槳；上槳 M1~M4 與 4 槳臂位相同，下槳 M5~M8 與同臂上槳同 roll/pitch、yaw 反號。
+  - 4 槳：Quad-X（`KK_FRAME=0`，預設，配置見下節）或 Quad-+（`KK_FRAME=1`，編譯期；需照 M1 前 / M2 右 / M3 後 / M4 左 接線）。
+  - 8 槳 X8 同軸：4 臂、每臂上下兩顆反槳；上槳 M1~M4 位置/轉向同下節，下槳 M5~M8 依序對應同臂（M5=FL、M6=FR、M7=RR、M8=RL），同 roll/pitch、yaw 反號。
   - M8 於本板改接 **D4（PD4 / GPIO20）**；原 docs 的 M8=GPIO7(PB7/XTAL2) 無法當 GPIO。切換後 Servo 會重新掛載，建議於解鎖前設定。
 - **定高（油門保持）**：`{"cmd":"hold","on":1}` 鎖定當下油門，之後的 `throttle` 命令一律忽略，直到 `{"cmd":"hold","on":0}`；`arm`/`disarm` 會自動清除。本板無高度感測器，故屬「定油門」而非真正的定高。
 - **自動配平（auto-trim）**：依三軸陀螺儀狀態自動修正平衡。roll/pitch 的積分項（`PID_ROLL_KI`/`PID_PITCH_KI`，預設 `0.08`）**只在搖桿置中時累積**，緩慢學習配平量以抵銷機體/ESC 的固定偏壓，讓機體不再持續漂移；搖桿離開中央即凍結積分、保留已學習的配平值。積分上限為 `PID_I_LIMIT`（`50`）。置中判定範圍為 `TRIM_DEADBAND`（`10` deg/s）。欲關閉請把 roll/pitch `KI` 設為 `0`。
 - **資源**：kkbox 韌體 12620 B（88% Flash）、RAM 833 B（81%）——ATmega168 仍吃緊，新增功能務必留意空間。
   - 卡爾曼濾波約增加 0.4 KB Flash；`jsonutil.h` 已改為手寫鍵值比對與整數解析，避開 `snprintf`/`strtol`（會連帶拉進 `vfprintf`、`strtol` 約 2.1 KB），才騰出空間。
+
+### Quad-X 馬達配置（`KK_FRAME=0`，預設）
+
+```
+          機頭 ↑
+    M1(FL) CCW     M2(FR) CW
+            \   /
+             \ /
+              X
+             / \
+            /   \
+    M4(RL) CW      M3(RR) CCW
+          機尾 ↓
+```
+
+| 馬達 | 位置 | 轉向 | 對角同向 | X8 下槳 |
+| --- | --- | --- | --- | --- |
+| M1 | 左前 FL | 逆時針 CCW | M3 | M5（CW） |
+| M2 | 右前 FR | 順時針 CW | M4 | M6（CCW） |
+| M3 | 右後 RR | 逆時針 CCW | M1 | M7（CW） |
+| M4 | 左後 RL | 順時針 CW | M2 | M8（CCW） |
+
+- 對角馬達同轉向（M1/M3 = CCW、M2/M4 = CW），每顆馬達裝對應轉向的槳；位置或轉向錯誤會直接翻機。
+- 遙測 `motor` 陣列順序即 M1→M8，可直接對照上表檢查各馬達輸出。
+- X8 同軸時下槳（M5~M8）與同臂上槳轉向相反，故 yaw 修正反號，roll/pitch 修正方向相同。
+- 舊版註解標示（M1=FR、M2=RR、M3=RL、M4=FL）與混控係數實際對應不符，本版已統一為 **M1=FL、M2=FR、M3=RR、M4=RL**；升級後請依上表重新核對馬達接線。
 
 ## 板載 LED1 狀態燈
 

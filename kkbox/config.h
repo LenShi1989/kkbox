@@ -84,14 +84,16 @@ static inline void ledWrite(uint8_t on) {
  */
 #define MOTOR_COUNT 4        /* 開機預設馬達數 (4 或 8) */
 #define MAX_MOTORS  8        /* Servo 陣列上限 (勿超過 Servo 函式庫上限) */
-#define MOTOR1_PIN 10
-#define MOTOR2_PIN  9
-#define MOTOR3_PIN  8
-#define MOTOR4_PIN  7
-#define MOTOR5_PIN  6
-#define MOTOR6_PIN  5
-#define MOTOR7_PIN  3
-#define MOTOR8_PIN  4
+/* Quad-X 位置: M1=左前(FL) M2=右前(FR) M3=右後(RR) M4=左後(RL)
+ * X8 下槳:     M5=FL      M6=FR      M7=RR      M8=RL (與同臂上槳反向) */
+#define MOTOR1_PIN 10   /* FL, CCW */
+#define MOTOR2_PIN  9   /* FR, CW  */
+#define MOTOR3_PIN  8   /* RR, CCW */
+#define MOTOR4_PIN  7   /* RL, CW  */
+#define MOTOR5_PIN  6   /* FL 下槳, CW  */
+#define MOTOR6_PIN  5   /* FR 下槳, CCW */
+#define MOTOR7_PIN  3   /* RR 下槳, CW  */
+#define MOTOR8_PIN  4   /* RL 下槳, CCW */
 
 #define ESC_MIN 1000
 #define ESC_MAX 2000
