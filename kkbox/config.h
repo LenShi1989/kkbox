@@ -110,7 +110,21 @@ static inline void ledWrite(uint8_t on) {
 /* ---------- 陀螺儀校正 ---------- */
 #define GYRO_CAL_SAMPLES    400
 #define GYRO_DEG_PER_COUNT  0.6f   /* deg/s per ADC count, 請依實測調整 */
-#define GYRO_LPF            0.6f   /* 低通濾波係數 0~1 */
+#define GYRO_LPF            0.6f   /* 一階低通係數 (僅 GYRO_KALMAN_ENABLE=0 時使用) */
+
+/* ---------- 陀螺儀卡爾曼濾波 (一維/軸) ----------
+ * 對三軸角速度各做隨機漫步模型的純量卡爾曼濾波:
+ *   預測: x = x, P = P + Q
+ *   更新: K = P / (P + R), x += K * (z - x), P = (1 - K) * P
+ * Q 越大越信任新量測 (反應快、抖動多), R 越大越信任模型 (平滑、延遲大)。
+ * 100Hz 下 Q=2.0 / R=2.0 的穩態增益約 0.62, 時間常數約 10ms,
+ * 與原本 GYRO_LPF=0.6 (約 11ms) 手感接近, 故既有 PID 預設值可直接沿用。
+ * 振動大 -> 降 Q 或升 R (更平滑、延遲增加); 反應鈍 -> 升 Q 或降 R。
+ * 將 GYRO_KALMAN_ENABLE 設為 0 即恢復原本的 GYRO_LPF 一階低通。 */
+#define GYRO_KALMAN_ENABLE 1
+#define GYRO_KALMAN_Q      2.0f
+#define GYRO_KALMAN_R      2.0f
+#define GYRO_KALMAN_P_INIT 1.0f
 
 /* ---------- PID 預設 ---------- */
 /* PID 修正量上限 (us): roll/pitch/yaw 各自加在油門上的修正會被夾在此範圍內。
