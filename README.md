@@ -455,7 +455,11 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 3. 加 `kd` 抑制震盪；yaw 軸可少量 `ki` 做定角速率。
 4. `GYRO_DEG_PER_COUNT` 依實際陀螺儀靈敏度校正，會影響 PID 增益尺度。
 
-# USB ISP MX-U2BLSP-V5.00
+---
+
+# USB ISP 燒錄器 Version 2.0
+
+MX-U2BLSP-V5.00
 
 裝置管理員:
 
@@ -491,7 +495,57 @@ USB裝置:
 
 ---
 
-# 安裝 MiniCore（不會直接改寫晶片）
+# AVRISP mkII 燒錄器
+
+## Zadig 修改驅動軟體
+
+下載網址:
+
+```txt
+https://zadig.akeo.ie/
+```
+
+處理驅動程式 (如 Atmel Studio 抓不到裝置)：
+
+- 下載並開啟 Zadig 工具。
+- 在上方選單點選 Options -> 勾選 List All Devices。
+- 從下拉選單中找到 AVRISP mkII（或類似的 Jungo / AVRISP 裝置）。
+- 將右側目標驅動程式切換為 libusb-win32 (v1.2.6.0 或相近版本)，點擊 Replace Driver。
+
+## 支援windows10、windows11 燒錄軟體
+
+下載網址:
+
+```txt
+https://www.microchip.com/en-us/tools-resources/archives/avr-sam-mcus
+```
+
+## 連接與燒錄步驟
+
+- 開啟 Device Programming 介面：
+  - 在上方選單點選 Tools -> Device Programming。
+
+- 選擇燒錄工具與晶片：
+  - Tool：下拉選擇 AVRISP mkII。
+  - Device：下拉選擇 ATmega168（或 ATmega168A / ATmega168P，視實際晶片而定）。
+  - Interface：選擇 ISP。
+  - 點擊 Apply。
+
+- 檢查連線狀態：
+  - 點擊 Read（在 Device signature 旁邊），如果成功讀出晶片簽章（Device Signature）與 Target Voltage（目標電壓，正常應顯示 3.3V 或 5V），代表硬體連接與驅動完全正常。
+
+- 載入與燒錄 HEX 檔案：
+  - 左側選單切換至 Memories 頁籤。
+  - 在 Flash 欄位中，點擊 ... 按鈕選擇你編譯好的 .hex 檔案（通常位於專案資料夾下的 Debug 或 Release 目錄中）。
+  - 勾選 Verify Flash（燒錄後進行校驗，確保資料正確）。
+  - 點擊右下角的 Program 按鈕開始燒錄。
+
+- 完成：
+  - 燒錄完成後，下方輸 出視窗會顯示 Flash programming successful，此時可以拔除 ISP 排線或讓晶片開始執行程式。
+
+## Arduino IDE 1.8.19 改直接燒錄
+
+## 安裝 MiniCore（不會直接改寫晶片）
 
 官方專案：MiniCore GitHub。MiniCore 支援 ATmega168 的 P、PA 等版本，並相容 Arduino IDE 1.8.x。
 GitHub+1
@@ -509,7 +563,7 @@ https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
 6. 安裝完成後重新啟動 Arduino IDE。
    以上僅安裝開發板定義與工具，不會因此自動修改 KK 飛控板的 Flash 或 Fuse。
 
-# KKmulticontroller V5.5 的設定
+## KKmulticontroller V5.5 的設定
 
 在 Arduino IDE 中，選擇「工具」選單，依序設定：
 
