@@ -117,7 +117,10 @@ body.nav-open .hamburger span:nth-child(3){transform:translateY(-6px) rotate(-45
 .card .k{color:var(--muted);font-size:12px}
 .card .v{font-size:18px;font-weight:600;margin-top:6px;word-break:break-all}
 .card .v.small{font-size:14px}
-.card .row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.card .row{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.card .row>*{min-width:0}
+.card .row.card-actions{justify-content:flex-start}
+.card>button{display:block}
 .card label{display:block;margin:10px 0}
 .card label.inline{display:inline-flex;gap:6px;margin-right:18px}
 
@@ -126,14 +129,48 @@ input,select{
   border:1px solid var(--line);border-radius:8px;font:inherit;
 }
 input:focus,select:focus{outline:none;border-color:var(--accent)}
+input[type=radio],input[type=checkbox]{width:auto;margin:0;padding:0;flex:0 0 auto;accent-color:var(--accent)}
 .listbox{margin:10px 0}
 label{color:var(--muted)}
+label.inline{align-items:center;line-height:1.45;max-width:100%}
+
+/* ---------- WiFi 掃描清單 ---------- */
+.wifi-actions{justify-content:flex-start}
+.wifi-actions button{margin:0}
+.wifi-list{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px;padding:2px;
+  max-height:264px;overflow-y:auto}
+.wifi-empty{margin:6px 2px 10px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.wifi-item{display:flex;align-items:center;gap:10px;width:100%;margin:0;padding:10px 12px;
+  background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--fg);
+  font:inherit;font-weight:400;text-align:left;cursor:pointer;
+  transition:border-color .15s,background .15s}
+.wifi-item:hover{background:var(--panel2);border-color:var(--accent)}
+.wifi-item:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.wifi-item.selected{border-color:var(--accent);background:rgba(55,194,255,.10)}
+.wifi-item.is-current .wifi-name{color:var(--accent)}
+.wifi-sig{display:inline-flex;align-items:flex-end;gap:2px;width:18px;height:15px;flex:0 0 auto}
+.wifi-sig i{width:3px;border-radius:1px;background:var(--line)}
+.wifi-sig i:nth-child(1){height:4px}
+.wifi-sig i:nth-child(2){height:7px}
+.wifi-sig i:nth-child(3){height:10px}
+.wifi-sig i:nth-child(4){height:14px}
+.wifi-sig[data-level="1"] i:nth-child(-n+1),
+.wifi-sig[data-level="2"] i:nth-child(-n+2),
+.wifi-sig[data-level="3"] i:nth-child(-n+3),
+.wifi-sig[data-level="4"] i:nth-child(-n+4){background:var(--accent)}
+.wifi-sig[data-level="1"] i:nth-child(-n+1){background:var(--err)}
+.wifi-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.wifi-name{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wifi-meta{font-size:11px;color:var(--muted)}
+.wifi-rssi{flex:0 0 auto;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.token{overflow-wrap:anywhere;word-break:break-all}
 
 button{
   padding:10px 16px;margin-top:8px;background:var(--accent2);color:#fff;border:none;
   border-radius:8px;font:inherit;font-weight:600;cursor:pointer;
 }
 button:hover{background:var(--accent)}
+button:disabled{opacity:.55;cursor:default;pointer-events:none}
 button.danger{background:#7a2323}
 button.danger:hover{background:var(--err)}
 .btn{display:inline-block;margin-top:8px;padding:10px 16px;background:var(--accent2);color:#fff;border-radius:8px;font-weight:600}
@@ -142,8 +179,8 @@ button.danger:hover{background:var(--err)}
 .tbl{width:100%;border-collapse:collapse;margin-top:12px}
 .tbl th,.tbl td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line)}
 .tbl tbody tr:last-child th,.tbl tbody tr:last-child td{border-bottom:none}
-.tbl th{color:var(--muted);font-weight:500;font-size:12px}
-.tbl td{font-weight:600}
+.tbl th{color:var(--muted);font-weight:500;font-size:12px;white-space:nowrap;vertical-align:top}
+.tbl td{font-weight:600;overflow-wrap:anywhere}
 .tbl input{margin:0}
 
 /* ---------- 進度條 ---------- */
@@ -185,7 +222,8 @@ html[data-theme="glass"] .login-overlay{background-image:var(--bg-image);backgro
 
 /* ---------- Toast ---------- */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel2);
-  border:1px solid var(--line);padding:12px 20px;border-radius:10px;z-index:200;box-shadow:var(--shadow)}
+  border:1px solid var(--line);padding:12px 20px;border-radius:10px;z-index:200;box-shadow:var(--shadow);
+  max-width:calc(100% - 32px);box-sizing:border-box}
 .toast.ok{border-color:var(--ok)}
 .toast.err{border-color:var(--err)}
 
@@ -215,13 +253,18 @@ html[data-theme="glass"] .login-overlay{background-image:var(--bg-image);backgro
   body{font-size:13px}
   main{padding:14px}
   h2{font-size:18px}
+  .topbar{gap:8px}
   .topbar-title{font-size:15px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
   .card{padding:12px}
   .tbl th,.tbl td{padding:8px 10px}
   .tbl{font-size:12.5px}
-  .theme-switch{padding:4px}
-  .theme-btn{font-size:11px;padding:6px 8px}
+  .theme-switch{padding:3px}
+  .theme-btn{padding:7px}
+  .theme-btn span{display:none}
+  .wifi-list{max-height:220px}
+  .wifi-item{padding:9px 10px;gap:8px}
+  .card-actions button{flex:1 1 100%;margin-top:0}
 }
 
 /* ---------- 飛行狀態: 油門儀表盤 / 馬達圓餅圖 ---------- */

@@ -61,6 +61,18 @@ static bool isAuthed(AsyncWebServerRequest* r) {
 }
 
 /* ================= JSON 組裝 ================= */
+static String jsonEscape(const String& s) {
+  String o;
+  o.reserve(s.length() + 8);
+  for (unsigned i = 0; i < s.length(); i++) {
+    char c = s[i];
+    if (c == '"' || c == '\\') { o += '\\'; o += c; }
+    else if ((uint8_t)c < 0x20) o += ' ';
+    else o += c;
+  }
+  return o;
+}
+
 static String buildFsJson() {
   String s = "{\"total\":" + String(SPIFFS.totalBytes());
   s += ",\"used\":" + String(SPIFFS.usedBytes()) + ",\"files\":[";
@@ -94,7 +106,7 @@ static String buildStatusJson() {
   /* WiFi */
   bool wc = (WiFi.status() == WL_CONNECTED);
   s += ",\"wifi\":{\"connected\":" + String(wc ? 1 : 0);
-  s += ",\"ssid\":\"" + (wc ? WiFi.SSID() : gSet.ssid) + "\"";
+  s += ",\"ssid\":\"" + jsonEscape(wc ? WiFi.SSID() : gSet.ssid) + "\"";
   s += ",\"ip\":\"" + (wc ? WiFi.localIP().toString() : String("-")) + "\"";
   s += ",\"rssi\":" + String(wc ? WiFi.RSSI() : 0) + "}";
 
@@ -102,7 +114,7 @@ static String buildStatusJson() {
   wifi_mode_t m = WiFi.getMode();
   bool ap = (m == WIFI_AP || m == WIFI_AP_STA);
   s += ",\"ap\":{\"active\":" + String(ap ? 1 : 0);
-  s += ",\"ssid\":\"" + apSsid() + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
+  s += ",\"ssid\":\"" + jsonEscape(apSsid()) + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
 
   s += ",\"kk\":{\"lines\":" + String(gKkLines);
   s += ",\"age\":" + String(gLastTelemetryMs ? (millis() - gLastTelemetryMs) : 999999) + "}";
@@ -134,17 +146,6 @@ static String arg(AsyncWebServerRequest* r, const char* name, const char* def = 
 }
 
 /* ================= WebSocket 事件 ================= */
-static String jsonEscape(const String& s) {
-  String o;
-  o.reserve(s.length() + 8);
-  for (unsigned i = 0; i < s.length(); i++) {
-    char c = s[i];
-    if (c == '"' || c == '\\') { o += '\\'; o += c; }
-    else if ((uint8_t)c < 0x20) o += ' ';
-    else o += c;
-  }
-  return o;
-}
 
 /* 送出命令並廣播串口監控幀 (網頁 RS232 串口通訊頁即時顯示 TX) */
 static inline void kkSendLog(const String& s) {
@@ -255,7 +256,7 @@ static void webSetup() {
     String s = "[";
     for (int i = 0; i < n; i++) {
       if (i) s += ',';
-      s += "{\"ssid\":\"" + WiFi.SSID(i) + "\",\"rssi\":" + String(WiFi.RSSI(i)) +
+      s += "{\"ssid\":\"" + jsonEscape(WiFi.SSID(i)) + "\",\"rssi\":" + String(WiFi.RSSI(i)) +
            ",\"enc\":" + String(WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? 1 : 0) + "}";
     }
     s += "]";

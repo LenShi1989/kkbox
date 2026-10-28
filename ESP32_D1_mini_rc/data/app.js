@@ -62,6 +62,7 @@ $('nav').addEventListener('click', () => { if (!isDesktop()) setNav(false); });
 window.addEventListener('resize', () => {
   const d = isDesktop();
   if (d !== wasDesktop) { wasDesktop = d; setNav(false); }
+  if ($('page-joy').classList.contains('active')) setKnob(joyRoll / RANGE, -joyPitch / RANGE);
 });
 setNav(false);
 
@@ -97,6 +98,8 @@ $('nav').addEventListener('click', (e) => {
   if (a.dataset.page === 'pid') loadPid();
   if (a.dataset.page === 'user') loadUser();
   if (a.dataset.page === 'esc') loadEsc();
+  /* 頁面切換後才取得實際尺寸，避免搖桿圓點停在左上角 */
+  if (a.dataset.page === 'joy') setKnob(joyRoll / RANGE, -joyPitch / RANGE);
 });
 
 /* ---------- 狀態 ---------- */
@@ -239,26 +242,132 @@ function sendOnce(obj, tries = 3) {
 }
 
 /* ---------- 網路設定 ---------- */
-$('wifi-scan').addEventListener('click', async () => {
-  $('wifi-scan-state').textContent = '掃描中...';
-  try {
-    const list = await api('/api/scan');
-    const sel = $('wifi-list'); sel.innerHTML = '';
-    list.sort((a, b) => b.rssi - a.rssi).forEach(n => {
-      const o = document.createElement('option');
-      o.value = n.ssid;
-      o.textContent = n.ssid + '  (' + n.rssi + ' dBm' + (n.enc ? ', 加密' : '') + ')';
-      sel.appendChild(o);
+function rssiLevel(rssi) {
+  if (rssi >= -55) return 4;
+  if (rssi >= -67) return 3;
+  if (rssi >= -78) return 2;
+  if (rssi >= -90) return 1;
+  return 0;
+}
+function wifiEmpty(msg) {
+  const box = $('wifi-list');
+  box.innerHTML = '';
+  const p = document.createElement('p');
+  p.className = 'wifi-empty';
+  p.textContent = msg;
+  box.appendChild(p);
+}
+function markWifiItem(item) {
+  $('wifi-list').querySelectorAll('.wifi-item').forEach(x => {
+    const on = x === item;
+    x.classList.toggle('selected', on);
+    x.setAttribute('aria-selected', String(on));
+  });
+}
+function renderWifiList(list) {
+  const nets = [];
+  const seen = {};
+  (list || []).filter(n => n && n.ssid)
+    .sort((a, b) => b.rssi - a.rssi)
+    .forEach(n => {
+      if (seen[n.ssid]) return;
+      seen[n.ssid] = true;
+      nets.push(n);
     });
-    $('wifi-scan-state').textContent = list.length + ' 個網路';
-  } catch (e) { $('wifi-scan-state').textContent = '掃描失敗'; }
+  if (!nets.length) { wifiEmpty('找不到 WiFi 網路，請靠近分享器後重新掃描。'); return; }
+
+  const cur = $('s-wifi-ssid').textContent;
+  const box = $('wifi-list');
+  box.innerHTML = '';
+  nets.forEach(n => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'wifi-item';
+    item.dataset.ssid = n.ssid;
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', 'false');
+
+    const sig = document.createElement('span');
+    sig.className = 'wifi-sig';
+    sig.dataset.level = String(rssiLevel(n.rssi));
+    sig.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 4; i++) sig.appendChild(document.createElement('i'));
+
+    const main = document.createElement('span');
+    main.className = 'wifi-main';
+    const name = document.createElement('span');
+    name.className = 'wifi-name';
+    name.textContent = n.ssid;
+    name.title = n.ssid;
+    const meta = document.createElement('span');
+    meta.className = 'wifi-meta';
+    let mt = n.enc ? '加密' : '開放';
+    if (cur && cur !== '-' && n.ssid === cur) { mt += ' · 目前連線'; item.classList.add('is-current'); }
+    meta.textContent = mt;
+    main.appendChild(name);
+    main.appendChild(meta);
+
+    const rssi = document.createElement('span');
+    rssi.className = 'wifi-rssi';
+    rssi.textContent = n.rssi + ' dBm';
+
+    item.appendChild(sig);
+    item.appendChild(main);
+    item.appendChild(rssi);
+    item.addEventListener('click', () => {
+      markWifiItem(item);
+      $('wifi-ssid').value = n.ssid;
+      $('wifi-scan-state').textContent = '已選擇「' + n.ssid + '」' + (n.enc ? '，請輸入密碼' : '（開放網路）');
+      if (n.enc) $('wifi-pass').focus();
+    });
+    box.appendChild(item);
+  });
+}
+let wifiScanning = false;
+$('wifi-scan').addEventListener('click', async () => {
+  if (wifiScanning) return;
+  wifiScanning = true;
+  const btn = $('wifi-scan');
+  btn.disabled = true;
+  btn.textContent = '掃描中…';
+  $('wifi-scan-state').textContent = '正在掃描，請稍候…';
+  try {
+    renderWifiList(await api('/api/scan'));
+    $('wifi-scan-state').textContent = $('wifi-list').querySelectorAll('.wifi-item').length + ' 個網路';
+  } catch (e) {
+    wifiEmpty('掃描失敗，請稍後再試。');
+    $('wifi-scan-state').textContent = '掃描失敗';
+  } finally {
+    wifiScanning = false;
+    btn.disabled = false;
+    btn.textContent = '重新掃描';
+  }
 });
-$('wifi-list').addEventListener('change', (e) => { $('wifi-ssid').value = e.target.value; });
+$('wifi-list').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  const items = Array.prototype.slice.call($('wifi-list').querySelectorAll('.wifi-item'));
+  if (!items.length) return;
+  e.preventDefault();
+  const at = items.indexOf(document.activeElement);
+  const next = e.key === 'ArrowDown' ? Math.min(items.length - 1, at + 1) : Math.max(0, at - 1);
+  items[next].focus();
+});
+$('wifi-ssid').addEventListener('input', () => {
+  const v = $('wifi-ssid').value.trim();
+  $('wifi-list').querySelectorAll('.wifi-item').forEach(x => {
+    const on = x.dataset.ssid === v;
+    x.classList.toggle('selected', on);
+    x.setAttribute('aria-selected', String(on));
+  });
+});
 $('wifi-save').addEventListener('click', async () => {
+  const sel = $('wifi-list').querySelector('.wifi-item.selected');
+  const ssid = $('wifi-ssid').value.trim() || (sel ? sel.dataset.ssid : '');
+  if (!ssid) { toast('請輸入或選擇 SSID', 'err'); return; }
   $('wifi-scan-state').textContent = '連線中…';
   toast('連線中，請稍候…');
   try {
-    const res = await api('/api/wifi', { method: 'POST', body: { ssid: $('wifi-ssid').value, pass: $('wifi-pass').value } });
+    const res = await api('/api/wifi', { method: 'POST', body: { ssid, pass: $('wifi-pass').value } });
     const msg = '已連線，IP 位置：' + res.ip + '（系統將重新啟動）';
     $('wifi-scan-state').textContent = msg;
     toast(msg, 'ok');

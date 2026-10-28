@@ -86,14 +86,14 @@ static String buildStatusJson() {
 
   bool wc = (WiFi.status() == WL_CONNECTED);
   s += ",\"wifi\":{\"connected\":" + String(wc ? 1 : 0);
-  s += ",\"ssid\":\"" + (wc ? WiFi.SSID() : gSet.ssid) + "\"";
+  s += ",\"ssid\":\"" + jsonEsc(wc ? WiFi.SSID() : gSet.ssid) + "\"";
   s += ",\"ip\":\"" + (wc ? WiFi.localIP().toString() : String("-")) + "\"";
   s += ",\"rssi\":" + String(wc ? WiFi.RSSI() : 0) + "}";
 
   wifi_mode_t m = WiFi.getMode();
   bool ap = (m == WIFI_AP || m == WIFI_AP_STA);
   s += ",\"ap\":{\"active\":" + String(ap ? 1 : 0);
-  s += ",\"ssid\":\"" + apSsid() + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
+  s += ",\"ssid\":\"" + jsonEsc(apSsid()) + "\",\"ip\":\"" + (ap ? WiFi.softAPIP().toString() : String("-")) + "\"}";
 
   s += ",\"link\":{\"up\":" + String(linkUp() ? 1 : 0);
   s += ",\"host\":\"" + gSet.rxHost + "\",\"port\":" + String(gSet.rxPort);
@@ -194,7 +194,7 @@ static void webSetup() {
     String s = "[";
     for (int i = 0; i < n; i++) {
       if (i) s += ',';
-      s += "{\"ssid\":\"" + WiFi.SSID(i) + "\",\"rssi\":" + String(WiFi.RSSI(i)) +
+      s += "{\"ssid\":\"" + jsonEsc(WiFi.SSID(i)) + "\",\"rssi\":" + String(WiFi.RSSI(i)) +
            ",\"enc\":" + String(WiFi.encryptionType(i) != WIFI_AUTH_OPEN ? 1 : 0) + "}";
     }
     s += "]";

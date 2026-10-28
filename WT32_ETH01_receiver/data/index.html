@@ -49,15 +49,15 @@
       </button>
       <div class="topbar-title">KKBOX 接收機</div>
       <div class="theme-switch" id="theme-switch" role="group" aria-label="主題切換">
-        <button type="button" class="theme-btn" data-theme="light" title="明亮">
+        <button type="button" class="theme-btn" data-theme="light" title="明亮" aria-label="明亮主題">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           <span>明亮</span>
         </button>
-        <button type="button" class="theme-btn" data-theme="dark" title="暗黑">
+        <button type="button" class="theme-btn" data-theme="dark" title="暗黑" aria-label="暗黑主題">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
           <span>暗黑</span>
         </button>
-        <button type="button" class="theme-btn" data-theme="glass" title="玻璃">
+        <button type="button" class="theme-btn" data-theme="glass" title="玻璃" aria-label="玻璃主題">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
           <span>玻璃</span>
         </button>
@@ -144,14 +144,17 @@
 
       <h3>WiFi 設定</h3>
       <div class="card">
-        <div class="row">
+        <div class="row wifi-actions">
           <button id="wifi-scan" class="ghost">掃描 SSID</button>
-          <span class="muted" id="wifi-scan-state"></span>
+          <span class="muted small" id="wifi-scan-state" role="status" aria-live="polite"></span>
         </div>
-        <select id="wifi-list" size="5" class="listbox"></select>
+        <p class="muted small">點選下方網路即可帶入 SSID；隱藏網路請直接手動輸入名稱。</p>
+        <div id="wifi-list" class="wifi-list" role="listbox" aria-label="可用的 WiFi 網路">
+          <p class="wifi-empty">尚未掃描，按「掃描 SSID」尋找附近的 WiFi。</p>
+        </div>
         <label>SSID <input id="wifi-ssid" placeholder="WiFi 名稱"></label>
         <label>密碼 <input id="wifi-pass" type="password" placeholder="WiFi 密碼"></label>
-        <div class="row">
+        <div class="row card-actions">
           <button id="wifi-save">連線並儲存</button>
           <button id="wifi-clear" class="danger">清除連線設定</button>
         </div>
