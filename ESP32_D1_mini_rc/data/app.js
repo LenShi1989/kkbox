@@ -152,7 +152,11 @@ function applyTelemetry(t) {
   $('t-gr').textContent = t.gyro.roll.toFixed(1);
   $('t-gp').textContent = t.gyro.pitch.toFixed(1);
   $('t-gy').textContent = t.gyro.yaw.toFixed(1);
-  $('t-motor').textContent = (t.motor || []).join(' ');
+  const motorLabels = ['M1 FL CCW', 'M2 FR CW', 'M3 RR CCW', 'M4 RL CW',
+                       'M5 FL 下槳 CW', 'M6 FR 下槳 CCW', 'M7 RR 下槳 CW', 'M8 RL 下槳 CCW'];
+  $('t-motor').textContent = (t.motor || []).map(function (value, i) {
+    return (motorLabels[i] || ('M' + (i + 1))) + ':' + value;
+  }).join(' · ');
   $('joy-state').textContent = t.armed ? '已解鎖 (ARMED)' : '已連線 (待命)';
   if (t.hold !== undefined) setHold(!!t.hold);
   loadEsc();

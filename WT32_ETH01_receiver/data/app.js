@@ -156,7 +156,11 @@ function applyTelemetry(t) {
   $('t-gr').textContent = t.gyro.roll.toFixed(1);
   $('t-gp').textContent = t.gyro.pitch.toFixed(1);
   $('t-gy').textContent = t.gyro.yaw.toFixed(1);
-  $('t-motor').textContent = (t.motor || []).join(' ');
+  $('t-motor').textContent = (t.motor || []).map(function (value, i) {
+    const labels = ['M1 FL CCW', 'M2 FR CW', 'M3 RR CCW', 'M4 RL CW',
+                    'M5 FL 下槳 CW', 'M6 FR 下槳 CCW', 'M7 RR 下槳 CW', 'M8 RL 下槳 CCW'];
+    return (labels[i] || ('M' + (i + 1))) + ':' + value;
+  }).join(' · ');
 
   if (t.set) updateGauge(t.set.thr);
   if (t.motor) updatePie(t.motor);
@@ -172,6 +176,8 @@ function applyTelemetry(t) {
 /* ---------- 飛行狀態 (油門儀表盤 / 馬達圓餅圖) ---------- */
 const MOTOR_COLORS = ['#37c2ff', '#3ddc84', '#ffcc4d', '#ff5b5b',
                       '#b06bff', '#4de1c1', '#ff9f43', '#8ad6ff'];
+const MOTOR_LABELS = ['M1 FL CCW', 'M2 FR CW', 'M3 RR CCW', 'M4 RL CW',
+                      'M5 FL 下槳 CW', 'M6 FR 下槳 CCW', 'M7 RR 下槳 CW', 'M8 RL 下槳 CCW'];
 
 function updateGauge(thr) {
   const v = Math.max(1000, Math.min(2000, Math.round(+thr || 0)));
@@ -194,7 +200,8 @@ function updatePie(motors) {
     const a = acc / total * 360, b = (acc + motors[i]) / total * 360;
     stops.push(c + ' ' + a.toFixed(2) + 'deg ' + b.toFixed(2) + 'deg');
     acc += motors[i];
-    html += '<li><span class="sw" style="background:' + c + '"></span>M' + (i + 1) +
+    html += '<li><span class="sw" style="background:' + c + '"></span>' +
+            (MOTOR_LABELS[i] || ('M' + (i + 1))) +
             '<span class="mv">' + motors[i] + '</span></li>';
   }
   pie.style.background = 'conic-gradient(' + stops.join(',') + ')';

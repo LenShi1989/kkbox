@@ -65,15 +65,15 @@ static inline void oledShow() {
   oled.print("Y ");
   oled.print(gTelem.yaw, 1);
 
-  /* 馬達輸出 (右側) */
+  /* 馬達輸出 (M1 FL, M2 FR, M3 RR, M4 RL; 對應飛控 motor[] 順序) */
   oled.setCursor(72, 26);
-  oled.print(gTelem.motor[0]);
+  oled.print("M1 "); oled.print(gTelem.motor[0]);
   oled.setCursor(72, 36);
-  oled.print(gTelem.motor[1]);
+  oled.print("M2 "); oled.print(gTelem.motor[1]);
   oled.setCursor(72, 46);
-  oled.print(gTelem.motor[2]);
+  oled.print("M3 "); oled.print(gTelem.motor[2]);
   oled.setCursor(72, 56);
-  oled.print(gTelem.motor[3]);
+  oled.print("M4 "); oled.print(gTelem.motor[3]);
 
   oled.display();
 }

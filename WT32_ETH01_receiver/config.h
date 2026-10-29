@@ -77,4 +77,7 @@
 #define SPP_DEADBAND 2     /* 搖桿中心死區 (byte, 128±2 視為 0) */
 #define SPP_MAX_SET  200   /* 角速率滿刻度 deg/s (與網頁搖桿 RANGE 一致) */
 
+/* KKBOX motor[] 順序固定為 M1..M8：M1=FL(CCW), M2=FR(CW),
+ * M3=RR(CCW), M4=RL(CW); M5..M8 為各位置 X8 下槳。 */
+
 #endif
