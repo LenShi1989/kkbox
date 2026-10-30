@@ -91,12 +91,16 @@ static inline void oledBootCal() {
   oled.clearDisplay();
   oled.setTextSize(1);
   oled.setTextColor(SSD1306_WHITE);
-  oled.setCursor(0, 0);  oled.print("Calibrating sticks");
-  oled.setCursor(0, 10); oled.print("Hold SW1, move all");
-  oled.setCursor(0, 20); oled.print("sticks to both ends");
-  oled.setCursor(0, 30); oled.print("Release SW1 = done");
-  oled.setCursor(0, 42); oled.printf("T %4d-%4d Y %4d-%4d", gCalTmin, gCalTmax, gCalYmin, gCalYmax);
-  oled.setCursor(0, 52); oled.printf("P %4d-%4d R %4d-%4d", gCalPmin, gCalPmax, gCalRmin, gCalRmax);
+  /* 8 行 x 8px = 64px: 標題 + 3 行說明 + 4 個軸各一行 (每行 <= 11 字 = 66px,
+     不再像原本 "T %4d-%4d Y %4d-%4d" 那樣超過 128px 被折行壓到下一行) */
+  oled.setCursor(0, 0);  oled.print("Calibrating sticks"); // 18 字
+  oled.setCursor(0, 8);  oled.print("Hold SW1, move all");   // 19 字
+  oled.setCursor(0, 16); oled.print("sticks to both ends");  // 19 字
+  oled.setCursor(0, 24); oled.print("Release SW1 = done");   // 18 字
+  oled.setCursor(0, 32); oled.printf("T %4d-%4d", gCalTmin, gCalTmax);
+  oled.setCursor(0, 40); oled.printf("Y %4d-%4d", gCalYmin, gCalYmax);
+  oled.setCursor(0, 48); oled.printf("P %4d-%4d", gCalPmin, gCalPmax);
+  oled.setCursor(0, 56); oled.printf("R %4d-%4d", gCalRmin, gCalRmax);
   oled.display();
 }
 

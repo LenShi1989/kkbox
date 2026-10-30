@@ -63,16 +63,6 @@ kkbox/
 │   ├── web.h                     網頁/WebSocket/REST/OTA/登入
 │   ├── build_opt.h               ElegantOTA 非同步旗標
 │   └── data/                     SPIFFS 網頁 (index.html/style.css/app.js)
-├── ESP32_D1_mini_rc/             ESP32 D1 mini 遙控器 (WiFi + OLED + 網頁)
-│   ├── ESP32_D1_mini_rc.ino      主程式
-│   ├── config.h                  腳位 / 網路 / 預設參數
-│   ├── settings.h                NVS 設定儲存
-│   ├── telem.h                   遙測狀態
-│   ├── display.h                 SSD1306 OLED 顯示
-│   ├── link.h                    WebSocket 用戶端 (連接收機)
-│   ├── web.h                     網頁/WebSocket/REST/OTA/登入
-│   ├── build_opt.h               ElegantOTA 非同步旗標
-│   └── data/                     SPIFFS 網頁 (含模擬搖桿)
 ├── ESP32_D1_mini_rc2/            ESP32 D1 mini 遙控器 rc2 (純 WiFi + 硬體/軟體搖桿)
 │   ├── ESP32_D1_mini_rc2.ino     主程式 (開機 ID 選擇 / 搖桿校正)
 │   ├── config.h                  腳位 / WiFi / 搖桿 / OLED 頁面
@@ -266,7 +256,7 @@ kkbox 飛控板 (ATmega168)
 
 - 命令字串**原樣轉送**（接收機不修改內容）；轉送同時以 `{"ser":{"dir":"tx","data":"..."}}` 廣播，供「RS232 串口通訊」頁即時顯示。
 - 回程（遙測 / ack / evt）方向相反：飛控板 `rs232` → 接收機 `kkReadLine()` → WebSocket **原樣廣播** → 遙控器 / 瀏覽器。
-- 對應程式碼：`ESP32_D1_mini_rc/link.h`（`linkSend`）、`WT32_ETH01_receiver/web.h`（`kkSendLog`）、`WT32_ETH01_receiver/kkbox.h`（`kkSend`）、`kkbox/kkbox.ino`（`readSerial` / `handleCommand`）。
+- 對應程式碼：`ESP32_D1_mini_rc2/link.h`（`linkSend`）、`WT32_ETH01_receiver/web.h`（`kkSendLog`）、`WT32_ETH01_receiver/kkbox.h`（`kkSend`）、`kkbox/kkbox.ino`（`readSerial` / `handleCommand`）。
 
 ### 共用程式庫
 
@@ -289,7 +279,7 @@ kkbox 飛控板 (ATmega168)
 - 功能：RJ45（LAN8720A）+ WiFi、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。**2.1.0 起移除全部藍牙功能**（`bt.h` / `spp.h` 已刪除，遙控器一律走 WiFi WebSocket）。
 - 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**馬達模式切換**：4/8 顆馬達、**飛行狀態**：無人機 ID（接收機自身設定）+ 油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token + 本機無人機 ID）。
 
-> PID 設定頁已**移至遙控器**（見下方 ESP32 D1 mini 遙控器）。
+> PID 設定頁已**移至遙控器**（見下方 ESP32 D1 mini 遙控器 rc2）。
 
 > 舊版（2.0.x）的 BLE / 傳統藍牙 SPP Server 已於 2.1.0 移除；接收機不再廣播 `KKBOX-RX-*`，也不再提供 `/api/bt`。遙測與命令只經 WiFi WebSocket（`/ws`）或 RJ45 上的同一個 WebSocket。
 
@@ -301,33 +291,6 @@ kkbox 飛控板 (ATmega168)
 | RJ45        | 路由器 / 交換器   | 有線網路（可用 DHCP 或固定 IP） |
 
 > RJ45（LAN8720A）使用 GPIO16(RST)/18(MDIO)/23(MDC) 與 GPIO0 時脈輸入，已於 `config.h` 設定。
-
-### ESP32 D1 mini 遙控器（`ESP32_D1_mini_rc/`）
-
-- 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`）
-- **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.54MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
-- 功能：WiFi 連線、以 WebSocket 連接收收機、**藍牙 BLE（NimBLE）用戶端**、SSD1306 OLED 顯示、SPIFFS 網頁、模擬搖桿、**定高控制 (油門保持)**、OTA、登入。
-- 網頁側邊欄：**系統狀態**、**網路設定**（WiFi + 接收機連線 IP/Token）、**藍牙連線**（掃描／連線配對／清除、WiFi↔藍牙通道切換）、**PID 設定**（三軸 PID，存本機 NVS，經目前通道下傳飛控板）、**模擬搖桿**（含定高切換）、**OTA 更新**、**使用者設定**。
-
-| ESP32 D1 mini | 連接對象          | 說明     |
-| ------------- | ----------------- | -------- |
-| GPIO21 (SDA)  | SSD1306 SDA       | I2C 資料 |
-| GPIO22 (SCL)  | SSD1306 SCL       | I2C 時脈 |
-| 3V3 / GND     | SSD1306 VCC / GND | 供電     |
-
-OLED 顯示內容：
-
-```
-KKBOX RC        LINK
-ARMED          THR 1300
-R  12.3        1420
-P  -4.5        1380
-Y   0.8        1460
-               1350
-```
-
-- 右上角狀態：WiFi 通道顯示 `NO LINK` / `LINK`，藍牙通道顯示 `BT ----` / `BT LINK`（是否連上接收機）。
-- 左側為陀螺三軸角速度與解鎖/油門；右側為四顆馬達輸出。
 
 ### ESP32 D1 mini 遙控器 rc2（`ESP32_D1_mini_rc2/`）
 
@@ -375,7 +338,7 @@ Y   0.8        1460
 {"cmd":"led","mode":"on"}
 ```
 
-## 燒錄方法 SOP（WT32_ETH01_receiver / ESP32_D1_mini_rc / ESP32_D1_mini_rc2）
+## 燒錄方法 SOP（WT32_ETH01_receiver / ESP32_D1_mini_rc2）
 
 > 每個專案都要燒 **程式（`.ino`）** 與 **網頁（`data/` → SPIFFS）** 兩部分，缺一網頁會 404。
 > 專案內的 `build_opt.h`（`-DELEGANTOTA_USE_ASYNC_WEBSERVER=1`）是編譯必要檔，請勿刪除。
@@ -411,12 +374,12 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 3. 選對序列埠 → 按 **上傳**（編譯並燒錄程式）。
 4. 燒錄完成後，**移開 IO0 的接地** 並按 RESET（或重新上電）進入執行。
 
-### 2. 遙控器（`ESP32_D1_mini_rc/` 或 `ESP32_D1_mini_rc2/`）
+### 2. 遙控器（`ESP32_D1_mini_rc2/`）
 
 1. 以 micro-USB 連接電腦。
 2. 開發板選 **`WEMOS D1 MINI ESP32`**（FQBN `esp32:esp32:d1_mini32`）。`rc2` 約 1.30MB（66%，min_spiffs），使用其他分區會與 SPIFFS 位移不符。
 3. **Partition Scheme 選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**
-   ——程式約 1.54MB，用預設分區（1.25MB）會編譯失敗。
+   ——程式約 1.30MB，用預設分區（1.25MB）會編譯失敗。
 4. 按 **上傳**。若出現連線失敗，按住板上的 **BOOT(IO0)** 鍵再上傳。
 
 ### 3. 燒錄網頁檔（`data/` → SPIFFS）
@@ -426,10 +389,9 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 - **專案附的打包腳本（推薦）**：會自動尋找 mkspiffs 並依專案判斷分割大小，輸出至各專案的 `build\spiffs.bin`。
   ```powershell
   tools\build_spiffs.bat WT32_ETH01_receiver   # size 0x20000 (offset 0x3D0000)
-  tools\build_spiffs.bat ESP32_D1_mini_rc      # size 0x20000 (offset 0x3D0000)
   tools\build_spiffs.bat ESP32_D1_mini_rc2     # 內含 data\config.json
   ```
-  （三個專案皆使用 `Minimal SPIFFS` 分割表，SPIFFS 位移同為 `0x3D0000`、大小 `0x20000`。`rc2` 首次開機若找不到 `/config.json` 會自動以預設值建立。）
+  （兩個專案皆使用 `Minimal SPIFFS` 分割表，SPIFFS 位移同為 `0x3D0000`、大小 `0x20000`。`rc2` 首次開機若找不到 `/config.json` 會自動以預設值建立。）
   產生後再用 esptool 燒入：`esptool.py --chip esp32 --port COMx write_flash <offset> build\spiffs.bin`。
 - **Arduino IDE 1.8.x**：安裝 **ESP32 Sketch Data Upload** 外掛，
   使用 `Tools → ESP32 Sketch Data Upload`（分割區會依所選開發板自動帶入）。
