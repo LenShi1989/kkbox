@@ -108,19 +108,14 @@ static inline long mapThrottle(int raw) {
   return constrain(v, (long)THR_MIN_US, (long)THR_MAX_US);
 }
 
-/* 以校正範圍中點為 0, 線性對應到 -STICK_RANGE ~ +STICK_RANGE, 含置中死區 */
-static inline float mapStick(int raw, int lo, int hi) {
-  if (hi - lo < 200) { lo = DEF_ADC_MIN; hi = DEF_ADC_MAX; }
-  float center = (lo + hi) * 0.5f;
-  float half;
-  float n;
-  if (raw >= center) {
-    half = hi - center;
-    n = half > 1 ? (raw - center) / half : 0;
-  } else {
-    half = center - lo;
-    n = half > 1 ? (raw - center) / half : 0;
+/* 以 center 為 0, 上下各自的半行程線性對應到 -STICK_RANGE ~ +STICK_RANGE, 含置中死區 */
+static inline float mapStick(int raw, float center, float loHalf, float hiHalf) {
+  if (loHalf + hiHalf < 200) {
+    center = (DEF_ADC_MIN + DEF_ADC_MAX) * 0.5f;
+    loHalf = hiHalf = AUTO_SPAN_HALF;
   }
+  float half = (raw >= center) ? hiHalf : loHalf;
+  float n = half > 1 ? (raw - center) / half : 0;
   if (n > 1) n = 1;
   if (n < -1) n = -1;
   float a = fabsf(n);
@@ -130,6 +125,45 @@ static inline float mapStick(int raw, int lo, int hi) {
     n = (n > 0 ? 1.0f : -1.0f) * (a - STICK_DEADBAND) / (1.0f - STICK_DEADBAND);
   }
   return n * STICK_RANGE;
+}
+
+/* ---------- 未校正軸的自動行程 ----------
+ * 校正無效時原本固定把 800~3200 當行程, 可變電阻若不在這個範圍
+ * (例如 YAW 靜止就高於 3200), 搖桿還沒校正就會一直卡在 +200/-200。
+ * 改成: 以開機第一次讀值當「中央」, 再依實際量到的 ADC 極值往外擴張,
+ * 這樣未校正也能置中, 推到兩端仍可到滿刻度。
+ * 已校正 (calValid) 的軸仍完全使用儲存的校正值。 */
+struct AxisSpan { int ref, lo, hi; bool init; };
+
+static AxisSpan gSpanR = {0, 0, 0, false};
+static AxisSpan gSpanP = {0, 0, 0, false};
+static AxisSpan gSpanY = {0, 0, 0, false};
+
+static inline void spanUpdate(AxisSpan& s, int raw) {
+  if (!s.init) { s.ref = s.lo = s.hi = raw; s.init = true; return; }
+  if (raw < s.lo) s.lo = raw;
+  if (raw > s.hi) s.hi = raw;
+}
+
+/* 有效行程: 已校正 -> 校正值中點; 未校正 -> 開機讀值當中心, 依觀測極值往外擴張 */
+static inline void stickWindow(const AxisSpan& s, int cmin, int cmax,
+                              float& center, float& loHalf, float& hiHalf) {
+  if (gSet.calValid) {
+    center = (cmin + cmax) * 0.5f;
+    loHalf = center - cmin;
+    hiHalf = cmax - center;
+    return;
+  }
+  if (!s.init) {
+    center = (DEF_ADC_MIN + DEF_ADC_MAX) * 0.5f;
+    loHalf = hiHalf = AUTO_SPAN_HALF;
+    return;
+  }
+  center = s.ref;
+  loHalf = s.ref - s.lo;
+  hiHalf = s.hi - s.ref;
+  if (loHalf < AUTO_SPAN_HALF) loHalf = AUTO_SPAN_HALF;
+  if (hiHalf < AUTO_SPAN_HALF) hiHalf = AUTO_SPAN_HALF;
 }
 
 /* ---------- VRC1: 4 段頁面 (含遲滯) ---------- */
@@ -182,9 +216,22 @@ static inline void inputRead() {
   gHw.rawVrc1 = adcRead(PIN_VRC1);
 
   gHw.thr   = mapThrottle(gHw.rawT);
-  gHw.roll  = mapStick(gHw.rawR, gSet.rmin, gSet.rmax);
-  gHw.pitch = mapStick(gHw.rawP, gSet.pmin, gSet.pmax);
-  gHw.yaw   = mapStick(gHw.rawY, gSet.ymin, gSet.ymax);
+
+  spanUpdate(gSpanR, gHw.rawR);
+  spanUpdate(gSpanP, gHw.rawP);
+  spanUpdate(gSpanY, gHw.rawY);
+  float c, loHalf, hiHalf;
+  stickWindow(gSpanR, gSet.rmin, gSet.rmax, c, loHalf, hiHalf);
+  gHw.roll  = mapStick(gHw.rawR, c, loHalf, hiHalf);
+  stickWindow(gSpanP, gSet.pmin, gSet.pmax, c, loHalf, hiHalf);
+  gHw.pitch = mapStick(gHw.rawP, c, loHalf, hiHalf);
+  stickWindow(gSpanY, gSet.ymin, gSet.ymax, c, loHalf, hiHalf);
+  gHw.yaw   = mapStick(gHw.rawY, c, loHalf, hiHalf);
+
+#if STICK_REVERSE_PITCH
+  /* 推桿向前應為正 (deg/s) */
+  gHw.pitch = -gHw.pitch;
+#endif
 
   gHw.sw1 = (digitalRead(PIN_SW1) == LOW);
   gHw.sw2 = (digitalRead(PIN_SW2) == LOW);

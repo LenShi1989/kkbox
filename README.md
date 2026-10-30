@@ -297,6 +297,7 @@ kkbox 飛控板 (ATmega168)
 - 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`），分區選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`。
 - **只用 2.4G WiFi**：以 WebSocket 用戶端連線 WT32-ETH01 接收機；已移除藍牙功能。
 - **硬體遙控**：四軸搖桿 (ADC1) 20Hz 連續送出 `setpoints` / `throttle`；SW3 = ARM、SW4 = DISARM。
+- **搖桿方向 / 未校正行為**：推桿向前為 Pitch 正值（`config.h` 的 `STICK_REVERSE_PITCH = 1` 會取負號，改 `0` 即恢復原方向）。尚未校正的軸以開機第一次讀值為中心、依實際量到的行程自動擴張，搖桿靜止時就是 0，不會因為可變電阻的中心不在 `DEF_ADC_MIN`~`DEF_ADC_MAX`（800~3200）中點而一直卡在 +200 / -200；校正完成後改用 `/config.json` 內的校正值。
 - **軟體遙控**：網頁模擬搖桿；控制來源可選「自動 / 硬體 / 軟體」。自動模式下使用軟體搖桿後會持續由軟體控制，直到實體搖桿實際移動才交還硬體。
 - **VRC1 切換 OLED 頁面**：0 = 飛行遙測、1 = 硬體輸入、2 = 網路資訊、3 = ID / 校正值。版面為「標題列 + 分隔線 + 5 行內容（y=12/22/32/42/52）」，最底行結束於 y60，不會再被裁切；畫面文字一律 ASCII（Adafruit 內建字型不支援中文）。
 - **SPIFFS `/config.json`**：帳密、WiFi、接收機 IP/Token、無人機 ID、控制來源、搖桿校正、PID 全部存在同一個 JSON。

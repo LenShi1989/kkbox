@@ -4,7 +4,7 @@
 /* =============================================================
  * ESP32 D1 mini 遙控器 (RC) 設定 — 純 2.4G WiFi 版
  * -------------------------------------------------------------
- * 版本 (Version): 2.1.1   (見 FW_VERSION)
+ * 版本 (Version): 2.1.2   (見 FW_VERSION)
  * 名稱 (Name):    ESP32 D1 mini RC
  * -------------------------------------------------------------
  * 功能:
@@ -20,7 +20,7 @@
 #include <Arduino.h>
 
 #define FW_NAME "ESP32 D1 mini RC"
-#define FW_VERSION "2.1.1"
+#define FW_VERSION "2.1.2"
 
 /* ---------- OLED (SSD1306 I2C, 沿用測試碼接線) ---------- */
 #define OLED_SDA 17
@@ -56,6 +56,8 @@
 #define THR_MIN_US       1000
 #define THR_MAX_US       2000
 #define ADC_SAMPLES      4        /* 每次讀值平均次數 */
+/* PITCH 搖桿與實機方向相反: 推桿向前 (ADC 往低) 應為正, 故對應後取負號 */
+#define STICK_REVERSE_PITCH 1
 
 /* ---------- 遙控命令傳送 ---------- */
 #define LINK_SEND_MS     50       /* 20Hz 連續傳送硬體搖桿命令 */
@@ -100,6 +102,8 @@
 /* ---------- 預設校正值 (尚未校正時仍可開機顯示) ---------- */
 #define DEF_ADC_MIN 800
 #define DEF_ADC_MAX 3200
+/* 尚未校正的軸: 以開機第一次讀值為中央, 至少給這個半行程 (±) */
+#define AUTO_SPAN_HALF ((DEF_ADC_MAX - DEF_ADC_MIN) / 2)
 
 /* KKBOX motor[] 順序固定為 M1..M8：M1=FL(CCW), M2=FR(CW),
  * M3=RR(CCW), M4=RL(CW); M5..M8 為各位置 X8 下槳。 */
