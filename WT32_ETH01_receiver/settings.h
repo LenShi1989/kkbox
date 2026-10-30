@@ -47,6 +47,9 @@ struct Settings {
 
   /* 藍牙通道: 0 = BLE (NimBLE), 1 = 傳統藍牙 (SPP), 2 = 關閉 */
   uint8_t btMode;
+
+  /* 本機無人機 ID (0~255), 顯示於飛行狀態頁 */
+  uint8_t droneId;
 };
 
 static Preferences gPrefs;
@@ -77,6 +80,7 @@ static inline void settingsLoad() {
   }
   gSet.btMode = gPrefs.getUChar("btml", DEF_BT_MODE);
   if (gSet.btMode > BT_MODE_OFF) gSet.btMode = DEF_BT_MODE;
+  gSet.droneId = gPrefs.getUChar("droneid", 1);
 }
 
 static inline void settingsSaveWifi() {
@@ -95,6 +99,9 @@ static inline void settingsSaveUser() {
 }
 static inline void settingsSaveBtMode() {
   gPrefs.putUChar("btml", gSet.btMode);
+}
+static inline void settingsSaveId() {
+  gPrefs.putUChar("droneid", gSet.droneId);
 }
 
 #endif

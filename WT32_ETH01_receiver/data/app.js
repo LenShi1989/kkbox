@@ -146,6 +146,7 @@ async function loadStatus() {
   dot.classList.toggle('on', s.eth.link || s.wifi.connected);
 
   $('s-ap').textContent = (s.ap && s.ap.active) ? s.ap.ssid + ' (' + s.ap.ip + ')' : '-';
+  if (s.droneId !== undefined) $('f-id').textContent = s.droneId;
 }
 
 function applyTelemetry(t) {
@@ -502,9 +503,15 @@ async function loadUser() {
   try { u = await api('/api/user'); } catch (e) { return; }
   $('u-user').value = u.user;
   $('u-token').textContent = u.token;
+  try { const idr = await api('/api/id'); $('u-id').value = idr.id; } catch (e) {}
 }
 $('u-copy').addEventListener('click', () => {
   navigator.clipboard.writeText($('u-token').textContent).then(() => toast('已複製 Token'));
+});
+$('u-id-save').addEventListener('click', async () => {
+  const v = Math.max(0, Math.min(255, parseInt($('u-id').value, 10) || 0));
+  try { await api('/api/id', { method: 'POST', body: { id: v } }); $('u-id').value = v; toast('無人機 ID 已儲存'); loadStatus(); }
+  catch (e) { toast('儲存失敗: ' + e.message, 'err'); }
 });
 $('u-save').addEventListener('click', async () => {
   try {

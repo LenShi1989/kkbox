@@ -75,13 +75,17 @@ kkbox/
 │   ├── web.h                     網頁/WebSocket/REST/OTA/登入
 │   ├── build_opt.h               ElegantOTA 非同步旗標
 │   └── data/                     SPIFFS 網頁 (含模擬搖桿)
-├── ESP32_D1_mini_rc_BT/          ESP32 D1 mini 藍牙遙控器 (Classic BT SPP client, 純硬體)
-│   ├── ESP32_D1_mini_rc_BT.ino   主程式 (開機校正 / 序列埠指令)
-│   ├── config.h                  腳位 / 傳統藍牙 / 傳送節奏
-│   ├── settings.h                NVS 設定儲存 (Server 名稱/MAC、ID、搖桿校正)
-│   ├── proto.h                   16-byte 二進位協定 (TX/RX 打包解包)
-│   ├── bt.h                      BluetoothSerial 用戶端 (自動連線/重連)
-│   └── display.h                 SSD1306 OLED 顯示
+├── ESP32_D1_mini_rc2/            ESP32 D1 mini 遙控器 rc2 (純 WiFi + 硬體/軟體搖桿)
+│   ├── ESP32_D1_mini_rc2.ino     主程式 (開機 ID 選擇 / 搖桿校正)
+│   ├── config.h                  腳位 / WiFi / 搖桿 / OLED 頁面
+│   ├── settings.h                SPIFFS config.json 設定儲存
+│   ├── input.h                   硬體搖桿 / 開關 / VRC1 / 軟體搖桿
+│   ├── telem.h                   遙測狀態
+│   ├── display.h                 SSD1306 OLED 四頁顯示
+│   ├── link.h                    WebSocket 用戶端 (連接收機)
+│   ├── web.h                     網頁/WebSocket/REST/OTA/登入
+│   ├── build_opt.h               ElegantOTA 非同步旗標
+│   └── data/                     SPIFFS 網頁 + config.json
 └── tools/
     └── kkbox_monitor.py          電腦端序列埠遠端測試工具 (pyserial)
 ```
@@ -285,13 +289,13 @@ kkbox 飛控板 (ATmega168)
 - 開發板：`esp32:esp32:wt32-eth01`（Arduino IDE：`WT32-ETH01 Ethernet Module`）
 - **分區請選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**（導入 BLE 後程式約 1.35MB，預設分區僅 1.25MB 會爆；`PartitionScheme=min_spiffs`）。
 - 功能：RJ45（LAN8720A）+ WiFi、**藍牙管理（三擇一：BLE NimBLE / 傳統藍牙 SPP / 關閉）**、飛控板 UART 橋接、SPIFFS 網頁、WebSocket、OTA、登入。
-- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**馬達模式切換**：4/8 顆馬達、**飛行狀態**：油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token）。
+- 網頁側邊欄：**系統狀態**（WiFi/RJ45/記憶體/SPIFFS/即時遙測）、**網路設定**（WiFi 掃描/儲存/清除、RJ45 DHCP/固定 IP）、**KKBOX 飛控管理**（**馬達模式切換**：4/8 顆馬達、**飛行狀態**：無人機 ID（接收機自身設定）+ 油門 PWM 儀表盤 + 馬達 PWM 圓餅圖、**RS232 串口通訊**：即時顯示 TX/RX JSON 字串、統計筆數、暫停/清除、手動送命令）、**OTA 更新**、**使用者設定**（帳密 + 裝置連結 Token + 本機無人機 ID）。
 
 > PID 設定頁已**移至遙控器**（見下方 ESP32 D1 mini 遙控器）。
 
 - 藍牙作為 AP/STA 以外的第三種連線方式，**模式互斥**（ESP32 只能用一個藍牙主機堆疊），由「系統狀態 → 藍芽管理」切換（`GET/POST /api/bt`，`action=mode`），設定存入 NVS 重開機沿用：
   - **0 = BLE（NimBLE GATT server）**：廣播名稱 `KKBOX-RX-<MAC後4碼>`，服務含 CMD 寫入 / TEL 通知兩特徵，供 `ESP32_D1_mini_rc` 掃描配對；收發 JSON 命令與遙測。
-  - **1 = 傳統藍牙（Classic BT / SPP server）**：伺服器名稱 `KKBOX-RX-BT`，供 `ESP32_D1_mini_rc_BT` 自動連線；以 16-byte 二進位協定接收遙控資料（轉成 kkbox 的 `throttle` 1000~2000 與 `setpoints` ±200 deg/s，限速 10Hz/5Hz 並每 500ms 心跳保活），並每 200ms 回送 16-byte 遙測幀（馬達 0~255 / 陀螺三軸 / 無人機編號）。
+  - **1 = 傳統藍牙（Classic BT / SPP server）**：伺服器名稱 `KKBOX-RX-BT`，供舊版 `ESP32_D1_mini_rc_BT` 自動連線（該專案已由純 WiFi 的 `ESP32_D1_mini_rc2` 取代，rc2 不使用藍牙）；以 16-byte 二進位協定接收遙控資料（轉成 kkbox 的 `throttle` 1000~2000 與 `setpoints` ±200 deg/s，限速 10Hz/5Hz 並每 500ms 心跳保活），並每 200ms 回送 16-byte 遙測幀（馬達 0~255 / 陀螺三軸 / 無人機編號）。
   - **2 = 關閉藍牙 Server**：不啟動任何藍牙堆疊（BLE 與 SPP 皆不開），需由網頁再次啟用。
   - 三種模式皆與 WiFi 併存，不需切換網路。
 
@@ -331,30 +335,35 @@ Y   0.8        1460
 - 右上角狀態：WiFi 通道顯示 `NO LINK` / `LINK`，藍牙通道顯示 `BT ----` / `BT LINK`（是否連上接收機）。
 - 左側為陀螺三軸角速度與解鎖/油門；右側為四顆馬達輸出。
 
-### ESP32 D1 mini 藍牙遙控器（`ESP32_D1_mini_rc_BT/`）
+### ESP32 D1 mini 遙控器 rc2（`ESP32_D1_mini_rc2/`）
 
-- 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`），預設分區即可（Flash 約 85%）。
-- **傳統藍牙（Classic BT / SPP）用戶端**：開機自動連線 WT32 藍牙 Server（名稱或 MAC 可改），斷線每 3 秒自動重連；純硬體遙控，無 WiFi / 網頁 / OTA。
-- 傳送 16 bytes 遙控資料（每 100ms）、接收 16 bytes 遙測，協定沿用 `test/esp32_server---TESTOK-----20250710`。
-- 開機流程：轉 VRC1 選無人機 ID → 按下 SW1 確認 → 按住 SW1 期間校正搖桿 → 放開 SW1 結束；**按住 SW2 開機可跳過**（沿用已存的 ID/校正值）。
-- 序列埠（115200）指令：`help` / `status` / `sc`（掃描）/ `sn <name>`（Server 名稱）/ `sa <mac>`（Server MAC）/ `sv`（儲存並重連）/ `id` / `fly` / `cal`。
+- 開發板：`esp32:esp32:d1_mini32`（Arduino IDE：`WEMOS D1 MINI ESP32`），分區選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`。
+- **只用 2.4G WiFi**：以 WebSocket 用戶端連線 WT32-ETH01 接收機；已移除藍牙功能。
+- **硬體遙控**：四軸搖桿 (ADC1) 20Hz 連續送出 `setpoints` / `throttle`；SW3 = ARM、SW4 = DISARM。
+- **軟體遙控**：網頁模擬搖桿；控制來源可選「自動 / 硬體 / 軟體」。自動模式下使用軟體搖桿後會持續由軟體控制，直到實體搖桿實際移動才交還硬體。
+- **VRC1 切換 OLED 頁面**：0 = 飛行遙測、1 = 硬體輸入、2 = 網路資訊、3 = ID / 校正值。
+- **SPIFFS `/config.json`**：帳密、WiFi、接收機 IP/Token、無人機 ID、控制來源、搖桿校正、PID 全部存在同一個 JSON。
+- 開機流程：轉 VRC1 選無人機 ID → 按 SW1 確認 → **按住 SW1 期間把四軸推到兩端校正** → 放開 SW1 結束；**按住 SW2 開機可跳過**（沿用已存的 ID / 校正值，尚未校正過則仍會進入流程）。
+- 網頁側邊欄：系統狀態、網路設定、PID 設定、模擬搖桿、**硬體遙控**（即時 ADC / 開關 / VRC1 / 校正 / 控制來源）、馬達校正、OTA、使用者設定。
 
-| ESP32 D1 mini               | 連接對象          | 說明                         |
-| --------------------------- | ----------------- | ---------------------------- |
-| GPIO39/35/33/34             | VTX/VTY/VPIT/VROL | 四軸搖桿 ADC                 |
-| GPIO13/25/32/12             | VRC1~4            | 可變電阻                     |
-| GPIO10/18/19/23             | SW1~4             | 開關（INPUT_PULLUP，LOW=ON） |
-| GPIO17 (SDA) / GPIO16 (SCL) | SSD1306           | I2C（沿用測試碼接線）        |
-| GPIO2                       | 板上 LED          | 連線指示（未連線閃較快）     |
+| ESP32 D1 mini               | 連接對象          | 說明                               |
+| --------------------------- | ----------------- | ---------------------------------- |
+| GPIO39/35/33/34             | VTX/VTY/VPIT/VROL | 四軸搖桿 ADC1                      |
+| **GPIO36 (VP)**             | VRC1              | **改接 ADC1**（原 GPIO13 為 ADC2） |
+| GPIO25/32/12                | VRC2/3/4          | 保留定義；25/12 為 ADC2，WiFi 下不可用 |
+| GPIO10/18/19/23             | SW1~4             | 開關（INPUT_PULLUP，LOW=ON）       |
+| GPIO17 (SDA) / GPIO16 (SCL) | SSD1306           | I2C                                |
+| GPIO2                       | 板上 LED          | 連線指示（未連線閃較快）           |
 
+> 重要：ESP32 開啟 WiFi 後 **ADC2 無法讀取**，所以 VRC1 必須從 GPIO13 改接 **GPIO36**；其他 ADC2 腳位（GPIO25/26/27/12~15、GPIO0/2/4）也不要用於搖桿。
 > 注意：SW1 = GPIO10 在多數 ESP32-WROOM 模組屬 Flash 腳；若開機異常請改 `config.h` 的 `PIN_SW1` 並同步接線。
 
 ### 首次使用流程
 
-1. 接收機接上 RJ45（開機後一律啟動 SoftAP `KKBOX-Receiver-<MAC後4碼>` / `12345678`，STA 與 AP 共存），瀏覽器開啟其 IP，以 `admin`/`admin` 登入。
+1. 接收機接上 RJ45（開機後一律啟動 SoftAP `KKBOX-Receiver-<MAC後4碼>` / `12345678`，STA 與 AP 共存），瀏覽器開啟其 IP，以 `admin`/`admin` 登入；可於「使用者設定」設定本機無人機 ID（顯示於飛行狀態頁）。
 2. 於「使用者設定」複製 **裝置連結 Token**。
 3. 遙控器開機（一律啟動 SoftAP `KKBOX-RC-<MAC後4碼>` / `12345678`，STA 與 AP 共存），登入後於「網路設定」填入 **接收機 IP 與 Token**，即自動建立 WebSocket 連線。
-4. 進入「模擬搖桿」即可解鎖、控制油門與 Roll/Pitch/Yaw。
+4. 進入「模擬搖桿」或「硬體遙控」即可解鎖、控制油門與 Roll/Pitch/Yaw；硬體搖桿第一次使用請先完成開機校正。
 
 ### WebSocket 協定
 
@@ -372,11 +381,11 @@ Y   0.8        1460
 {"cmd":"led","mode":"on"}
 ```
 
-## 燒錄方法 SOP（WT32_ETH01_receiver / ESP32_D1_mini_rc）
+## 燒錄方法 SOP（WT32_ETH01_receiver / ESP32_D1_mini_rc / ESP32_D1_mini_rc2）
 
-> 兩個專案都要燒 **程式（`.ino`）** 與 **網頁（`data/` → SPIFFS）** 兩部分，缺一網頁會 404。
+> 每個專案都要燒 **程式（`.ino`）** 與 **網頁（`data/` → SPIFFS）** 兩部分，缺一網頁會 404。
 > 專案內的 `build_opt.h`（`-DELEGANTOTA_USE_ASYNC_WEBSERVER=1`）是編譯必要檔，請勿刪除。
-> 兩個專案各自獨立，直接開啟該資料夾內的 `.ino` 即可（IDE 會自動載入同資料夾的 `config.h/web.h/...`）。
+> 各專案彼此獨立，直接開啟該資料夾內的 `.ino` 即可（IDE 會自動載入同資料夾的 `config.h/web.h/...`）。
 
 ### 0. 前置準備
 
@@ -408,10 +417,10 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 3. 選對序列埠 → 按 **上傳**（編譯並燒錄程式）。
 4. 燒錄完成後，**移開 IO0 的接地** 並按 RESET（或重新上電）進入執行。
 
-### 2. 遙控器（`ESP32_D1_mini_rc/`）
+### 2. 遙控器（`ESP32_D1_mini_rc/` 或 `ESP32_D1_mini_rc2/`）
 
 1. 以 micro-USB 連接電腦。
-2. 開發板選 **`WEMOS D1 MINI ESP32`**（FQBN `esp32:esp32:d1_mini32`）。
+2. 開發板選 **`WEMOS D1 MINI ESP32`**（FQBN `esp32:esp32:d1_mini32`）。`rc2` 約 1.30MB（99%），**務必使用 Minimal SPIFFS**。
 3. **Partition Scheme 選 `Minimal SPIFFS (1.9MB APP with OTA/128KB SPIFFS)`**
    ——程式約 1.54MB，用預設分區（1.25MB）會編譯失敗。
 4. 按 **上傳**。若出現連線失敗，按住板上的 **BOOT(IO0)** 鍵再上傳。
@@ -424,8 +433,9 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
   ```powershell
   tools\build_spiffs.bat WT32_ETH01_receiver   # size 0x20000 (offset 0x3D0000)
   tools\build_spiffs.bat ESP32_D1_mini_rc      # size 0x20000 (offset 0x3D0000)
+  tools\build_spiffs.bat ESP32_D1_mini_rc2     # 內含 data\config.json
   ```
-  （兩專案皆使用 `Minimal SPIFFS` 分割表，SPIFFS 位移同為 `0x3D0000`、大小 `0x20000`。）
+  （三個專案皆使用 `Minimal SPIFFS` 分割表，SPIFFS 位移同為 `0x3D0000`、大小 `0x20000`。`rc2` 首次開機若找不到 `/config.json` 會自動以預設值建立。）
   產生後再用 esptool 燒入：`esptool.py --chip esp32 --port COMx write_flash <offset> build\spiffs.bin`。
 - **Arduino IDE 1.8.x**：安裝 **ESP32 Sketch Data Upload** 外掛，
   使用 `Tools → ESP32 Sketch Data Upload`（分割區會依所選開發板自動帶入）。
@@ -444,7 +454,8 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
   瀏覽器開啟其 IP，登入 `admin / admin`。
 - **遙控器**：一律啟動 SoftAP `KKBOX-RC-<MAC後4碼>` / 密碼 `12345678`（WiFi STA 連線與 AP 共存，AP 網段 `192.168.10.x`，與接收機區隔），並於 OLED 顯示狀態。
 - 首次設定：接收機「使用者設定」取得 **裝置連結 Token**；遙控器「網路設定」填入接收機 **IP + Token**。
-- **藍牙（BLE）連線**：接收機開機即以 `KKBOX-RX-<MAC後4碼>` 廣播；遙控器於「藍牙連線」頁按 **掃描**，於清單點選接收機即 **連線配對**，再將通道切至 **藍牙** 即可（`清除` 可移除配對並斷線）。藍牙與 WiFi 連線可同時存在，切換通道只影響命令走哪條路。
+- **rc2 開機流程**：轉 VRC1 選無人機 ID → 按 SW1 確認 → 按住 SW1 期間把四軸推到兩端校正 → 放開 SW1 結束；按住 SW2 開機則跳過（沿用 `/config.json` 內的 ID/校正值）。硬體搖桿未完成校正前不會送出命令。
+- **藍牙（BLE）連線（僅 `ESP32_D1_mini_rc`；rc2 已移除藍牙）**：接收機開機即以 `KKBOX-RX-<MAC後4碼>` 廣播；遙控器於「藍牙連線」頁按 **掃描**，於清單點選接收機即 **連線配對**，再將通道切至 **藍牙** 即可（`清除` 可移除配對並斷線）。藍牙與 WiFi 連線可同時存在，切換通道只影響命令走哪條路。
 
 ### 5. 之後的更新：OTA
 
@@ -466,9 +477,14 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
 | POST     | `/api/wifi`             | `ssid`,`pass` 或 `action=clear`                                                                                                                                                                               |
 | GET/POST | `/api/user`             | 帳號設定（POST 需 `cur` 目前密碼）                                                                                                                                                                            |
 | GET/POST | `/api/net`（僅接收機）  | RJ45 DHCP/固定 IP（儲存後重開機）                                                                                                                                                                             |
-| GET/POST | `/api/pid`（僅遙控器）  | 三軸 PID（存本機 NVS，經目前通道下傳飛控板）                                                                                                                                                                  |
+| GET/POST | `/api/pid`（僅遙控器）  | 三軸 PID（rc 存 NVS、rc2 存 `config.json`，經 WiFi 下傳飛控板）                                                                                                                                                                  |
 | GET/POST | `/api/link`（僅遙控器） | 接收機 IP/埠/Token                                                                                                                                                                                            |
 | GET/POST | `/api/bt`               | 藍牙管理（GET：`mode`（0 BLE／1 SPP／2 關閉）／`connected`／`name`／`rx`／`conns`）；POST `action=disconnect\|mode`（`mode`＝0/1/2，僅接收機可切換）；遙控器另有 `action=scan\|stop\|connect\|clear\|channel` |
+| GET      | `/api/hardware`（僅 rc2）| 即時 ADC / 開關 / VRC1 / 輸出 / 校正值 / 控制來源 |
+| POST     | `/api/cal`（僅 rc2）    | `action=start\|stop` 搖桿校正 |
+| POST     | `/api/control`（僅 rc2）| `source`＝0 自動／1 硬體／2 軟體 |
+| GET/POST | `/api/id`（rc2 / 接收機）| rc2：`drone`,`rc`；接收機：`id`（本機無人機 ID） |
+| GET      | `/api/config`（僅 rc2） | 回傳 SPIFFS `/config.json` 原始內容 |
 | —        | `/update`               | ElegantOTA 上傳頁（HTTP 驗證）                                                                                                                                                                                |
 
 > 所有 `/api/*`（除 `login`/`logout`）需帶 Session Cookie 或 `X-Auth` Token，否則回 `401`。

@@ -124,6 +124,7 @@ static String buildStatusJson() {
   s += ",\"name\":\"" + btName() + "\"";
   s += ",\"rx\":" + String(gBtRxLines) + ",\"conns\":" + String(gBtConnCount) + "}";
 
+  s += ",\"droneId\":" + String(gSet.droneId);
   s += ",\"token\":\"" + gSet.deviceToken + "\"}";
   return s;
 }
@@ -209,6 +210,18 @@ static void webSetup() {
   server.on("/api/telemetry", HTTP_GET, [](AsyncWebServerRequest* r) {
     requireAuth(r); if (r->getResponse()) return;
     sendJson(r, gLastTelemetry);
+  });
+
+  /* ---- 本機無人機 ID ---- */
+  server.on("/api/id", HTTP_GET, [](AsyncWebServerRequest* r) {
+    requireAuth(r); if (r->getResponse()) return;
+    sendJson(r, "{\"id\":" + String(gSet.droneId) + "}");
+  });
+  server.on("/api/id", HTTP_POST, [](AsyncWebServerRequest* r) {
+    requireAuth(r); if (r->getResponse()) return;
+    gSet.droneId = (uint8_t)constrain(arg(r, "id", "1").toInt(), 0, 255);
+    settingsSaveId();
+    sendOk(r);
   });
 
   /* ---- 轉送控制命令到飛控板 ---- */

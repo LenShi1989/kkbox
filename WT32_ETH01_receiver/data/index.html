@@ -192,6 +192,7 @@
       <h2>飛行狀態</h2>
       <table class="tbl">
         <tbody>
+          <tr><th>無人機 ID</th><td id="f-id">-</td></tr>
           <tr><th>解鎖</th><td id="f-armed">-</td></tr>
           <tr><th>馬達數</th><td id="f-mcount">-</td></tr>
           <tr><th>定高 (油門保持)</th><td id="f-hold">-</td></tr>
@@ -289,6 +290,12 @@
         <label>新密碼 <input id="u-pass" type="password" placeholder="留空表示不變更"></label>
         <label>目前密碼 <input id="u-cur" type="password" placeholder="確認用"></label>
         <button id="u-save">儲存</button>
+      </div>
+      <div class="card">
+        <h3>無人機 ID</h3>
+        <p class="muted">本機 (接收機) 的無人機編號，顯示於「飛行狀態」頁。</p>
+        <label>ID (0~255) <input id="u-id" type="number" min="0" max="255"></label>
+        <button id="u-id-save">儲存 ID</button>
       </div>
       <div class="card">
         <h3>裝置連結 Token</h3>
