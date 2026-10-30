@@ -164,6 +164,11 @@ static inline bool inputHandleCmd(const String& msg) {
   return true;
 }
 
+/* OLED 只支援 ASCII 字型, 畫面用短代碼; 網頁仍用中文名稱 */
+static inline const char* inputSourceCode(uint8_t s) {
+  return s == CTRL_HARDWARE ? "HW" : (s == CTRL_SOFTWARE ? "SW" : "AUTO");
+}
+
 static inline const char* inputSourceName(uint8_t s) {
   return s == CTRL_HARDWARE ? "硬體" : (s == CTRL_SOFTWARE ? "軟體" : "自動");
 }

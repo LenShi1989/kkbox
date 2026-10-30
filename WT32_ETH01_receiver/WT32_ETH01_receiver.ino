@@ -1,12 +1,11 @@
 /*
  * WT32-ETH01 接收機 (Receiver) — KKBOX 飛控系統
  * ---------------------------------------------------------------
- * 版本 (Version): 2.0.0   (見 config.h 的 FW_VERSION)
+ * 版本 (Version): 2.1.0   (見 config.h 的 FW_VERSION)
  * 名稱 (Name):    WT32-ETH01 Receiver
  * ---------------------------------------------------------------
  * - 內建 LAN8720A RJ45 有線網路 + WiFi 無線網路 (可同時)
- * - 藍牙管理 (三擇一, 網頁可切換): BLE (NimBLE GATT) /
- *   傳統藍牙 (Classic BT SPP, 16-byte 協定) / 關閉
+ * - 無藍牙: 遙控器一律經 WiFi WebSocket 連線 (2.1.0 移除藍牙功能)
  * - SPIFFS 網頁介面 (ESPAsyncWebServer) + WebSocket 即時雙向
  * - 與 KKBOX 飛控板以 Serial2 (GPIO5/GPIO17, 9600) 交換 JSON
  * - 網頁: 系統狀態 / 網路設定 / 馬達模式 / 使用者設定 / OTA
@@ -22,7 +21,6 @@
 #include "config.h"
 #include "settings.h"
 #include "kkbox.h"
-#include "bt.h"
 #include "web.h"
 
 void setup() {
@@ -74,7 +72,6 @@ void setup() {
 
   /* ---------- 飛控板 UART & 網頁 ---------- */
   kkBegin();
-  btBegin();
   webSetup();
 
   Serial.println("[WEB] 伺服器已啟動 (port 80)");
@@ -95,10 +92,7 @@ void loop() {
     }
     /* t/ack/evt 以外 (如 err) 也一併廣播, 供 RS232 串口通訊頁即時顯示 RX */
     ws.textAll(line);
-    btSend(line);   /* 同步以 BLE notify 給 RC (SPP 模式下略過) */
   }
-
-  btLoop();   /* 傳統藍牙 (SPP) 模式: 收遙控封包 / 送遙測幀 */
 
   /* WiFi 斷線自動重連 (SoftAP 持續運作, 僅重連 STA) */
   static uint32_t lastWifiTry = 0;

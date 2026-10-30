@@ -521,44 +521,15 @@ $('u-save').addEventListener('click', async () => {
   } catch (e) { toast('儲存失敗: ' + e.message, 'err'); }
 });
 
-/* ---------- 藍牙管理 (BLE / SPP / 關閉) ---------- */
-const BT_MODES = { 0: 'BLE (NimBLE)', 1: '傳統藍牙 (SPP)', 2: '已關閉' };
-async function loadBt() {
-  let b;
-  try { b = await api('/api/bt'); } catch (e) { return; }
-  $('bt-mode').textContent = BT_MODES[b.mode] || ('未知 (' + b.mode + ')');
-  $('bt-name').textContent = b.name || '-';
-  $('bt-conn').textContent = b.mode === 2 ? '-' : (b.connected ? '已連線' : '等待連線');
-  $('bt-conn').style.color  = b.connected ? 'var(--ok)' : 'var(--muted)';
-  $('bt-rx').textContent    = (b.rx || 0) + '（連線 ' + (b.conns || 0) + ' 次）';
-  document.querySelectorAll('input[name="btmode"]').forEach(i => { i.checked = (+i.value === b.mode); });
-  $('bt-disconn').disabled = (b.mode === 2 || !b.connected);
-}
-$('btmode-save').addEventListener('click', async () => {
-  const sel = document.querySelector('input[name="btmode"]:checked');
-  if (!sel) return;
-  try {
-    await api('/api/bt', { method: 'POST', body: { action: 'mode', mode: sel.value } });
-    toast('已套用藍牙設定');
-    setTimeout(loadBt, 1500);
-  } catch (e) { toast('套用失敗: ' + e.message, 'err'); loadBt(); }
-});
-$('bt-disconn').addEventListener('click', async () => {
-  try { await api('/api/bt', { method: 'POST', body: { action: 'disconnect' } }); toast('已中斷連線'); }
-  catch (e) { toast('失敗: ' + e.message, 'err'); }
-});
-
 /* ---------- 啟動 ---------- */
 function start() {
   $('login').classList.add('hidden');
   $('app').classList.remove('hidden');
   loadStatus();
   loadFs();
-  loadBt();
   connectWs();
   setInterval(loadStatus, 3000);
   setInterval(loadFs, 15000);
-  setInterval(loadBt, 3000);
 }
 
 (async function init() {

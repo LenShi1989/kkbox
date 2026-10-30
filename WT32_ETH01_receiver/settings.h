@@ -17,15 +17,6 @@ static inline String apSsid() {
   return String(buf);
 }
 
-/* BLE 廣播名稱 = 前綴 + MAC 後 4 碼 (例: KKBOX-RX-A1B2) */
-static inline String btName() {
-  uint8_t mac[6] = {0};
-  esp_read_mac(mac, ESP_MAC_WIFI_STA);
-  char buf[40];
-  snprintf(buf, sizeof(buf), "%s%02X%02X", BT_NAME_PREFIX, mac[4], mac[5]);
-  return String(buf);
-}
-
 /* 以 NVS (Preferences) 儲存設定 */
 struct Settings {
   /* 登入帳密 */
@@ -44,9 +35,6 @@ struct Settings {
 
   /* 裝置連結 Token (供 ESP32 D1 mini RC 連線 WS 用) */
   String deviceToken;
-
-  /* 藍牙通道: 0 = BLE (NimBLE), 1 = 傳統藍牙 (SPP), 2 = 關閉 */
-  uint8_t btMode;
 
   /* 本機無人機 ID (0~255), 顯示於飛行狀態頁 */
   uint8_t droneId;
@@ -72,14 +60,12 @@ static inline void settingsLoad() {
   gSet.dhcp  = gPrefs.getBool("dhcp", true);
   gSet.ip    = gPrefs.getString("ip", "192.168.1.50");
   gSet.gw    = gPrefs.getString("gw", "192.168.1.1");
-  gSet.mask = gPrefs.getString("mask", "255.255.255.0");
+  gSet.mask  = gPrefs.getString("mask", "255.255.255.0");
   gSet.deviceToken = gPrefs.getString("dtok", "");
   if (gSet.deviceToken.length() == 0) {
     gSet.deviceToken = randomHex(16);
     gPrefs.putString("dtok", gSet.deviceToken);
   }
-  gSet.btMode = gPrefs.getUChar("btml", DEF_BT_MODE);
-  if (gSet.btMode > BT_MODE_OFF) gSet.btMode = DEF_BT_MODE;
   gSet.droneId = gPrefs.getUChar("droneid", 1);
 }
 
@@ -96,9 +82,6 @@ static inline void settingsSaveNet() {
 static inline void settingsSaveUser() {
   gPrefs.putString("user", gSet.user);
   gPrefs.putString("pass", gSet.pass);
-}
-static inline void settingsSaveBtMode() {
-  gPrefs.putUChar("btml", gSet.btMode);
 }
 static inline void settingsSaveId() {
   gPrefs.putUChar("droneid", gSet.droneId);

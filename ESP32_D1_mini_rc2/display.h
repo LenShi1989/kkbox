@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <string.h>
 #include "config.h"
 #include "settings.h"
 #include "telem.h"
@@ -12,14 +13,32 @@
 
 /* =============================================================
  * SSD1306 128x64 OLED
- *   - 開機: 無人機 ID 選擇 / 搖桿校正
- *   - 開機後: VRC1 四段切換頁面
- *       0 = 飛行遙測   1 = 硬體輸入
- *       2 = 網路資訊   3 = ID / 校正值
+ * -------------------------------------------------------------
+ * 版面 (size 1 字型, 每字 6x8 px):
+ *   y0  : 標題列 (左: 頁名, 右: 頁碼)
+ *   y9  : 分隔線
+ *   y12/22/32/42/52 : 五行內容, 每行 8px, 最底結束於 y60
+ *   => 128x64 全畫面可視, 不會再出現底部文字被切一半
+ * -------------------------------------------------------------
+ * VRC1 四段切換頁面:
+ *   0 = 飛行遙測   1 = 硬體輸入
+ *   2 = 網路資訊   3 = ID / 校正值
+ * 注意: Adafruit 內建字型只支援 ASCII, 畫面文字一律用英文,
+ *       中文只出現在網頁 (UTF-8) 與序列埠。
  * ============================================================= */
 
 static Adafruit_SSD1306 oled(OLED_W, OLED_H, &Wire, -1);
 static bool gOledOk = false;
+
+/* 5 行內容區: 第 0 行 y=12, 行距 10px, 最後一行 y=52 (結束 y60) */
+#define OLED_ROW_TOP 12
+#define OLED_ROW_H   10
+
+/* 將游標移到第 row 行、第 col 個字元 (每字 6px) */
+static inline void oledAt(uint8_t row, uint8_t col = 0) {
+  if (!gOledOk) return;
+  oled.setCursor((int16_t)col * 6, (int16_t)OLED_ROW_TOP + (int16_t)row * OLED_ROW_H);
+}
 
 static inline void oledBegin() {
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -33,11 +52,19 @@ static inline void oledBegin() {
   oled.display();
 }
 
-static inline void oledText(int x, int y, const String& s, uint8_t size = 1) {
+/* 共用的標題列: 左頁名, 右頁碼, 底線 */
+static inline void oledHeader(const char* title, uint8_t page) {
   if (!gOledOk) return;
-  oled.setTextSize(size);
-  oled.setCursor(x, y);
-  oled.print(s);
+  oled.clearDisplay();
+  oled.setTextSize(1);
+  oled.setTextColor(SSD1306_WHITE);
+  oled.setCursor(0, 0);
+  oled.print(title);
+  char b[8];
+  snprintf(b, sizeof b, "%u/%u", (unsigned)(page + 1), (unsigned)OLED_PAGES);
+  oled.setCursor(OLED_W - (int16_t)strlen(b) * 6, 0);
+  oled.print(b);
+  oled.drawFastHLine(0, 9, OLED_W, SSD1306_WHITE);
 }
 
 /* ---------- 開機: 選擇目標無人機 ID (SW1 按下確認) ---------- */
@@ -47,14 +74,14 @@ static inline void oledBootFlyId(uint8_t id, int raw) {
   oled.setTextSize(2);
   oled.setTextColor(SSD1306_WHITE);
   oled.setCursor(0, 0);
-  oled.printf("FlyID:%3d", id);
+  oled.printf("FlyID %3u", (unsigned)id);
   oled.setTextSize(1);
-  oled.setCursor(0, 26);
+  oled.setCursor(0, 24);
   oled.print("Turn VRC1 to select");
-  oled.setCursor(0, 38);
-  oled.print("SW1 = ON to confirm");
-  oled.setCursor(0, 52);
-  oled.printf("VRC1 raw: %4d", raw);
+  oled.setCursor(0, 36);
+  oled.print("Press SW1 to confirm");
+  oled.setCursor(0, 48);
+  oled.printf("VRC1 raw %4d", raw);
   oled.display();
 }
 
@@ -64,126 +91,111 @@ static inline void oledBootCal() {
   oled.clearDisplay();
   oled.setTextSize(1);
   oled.setTextColor(SSD1306_WHITE);
-  oled.setCursor(0, 0);
-  oled.println("Calibrating sticks");
-  oled.println("Hold SW1, move all");
-  oled.println("sticks to both ends");
-  oled.println("Release SW1 = end");
-  oled.printf("T%4d-%4d Y%4d-%4d\n", gCalTmin, gCalTmax, gCalYmin, gCalYmax);
-  oled.printf("P%4d-%4d R%4d-%4d\n", gCalPmin, gCalPmax, gCalRmin, gCalRmax);
-  oled.printf("now %4d %4d %4d %4d", gHw.rawT, gHw.rawY, gHw.rawP, gHw.rawR);
+  oled.setCursor(0, 0);  oled.print("Calibrating sticks");
+  oled.setCursor(0, 10); oled.print("Hold SW1, move all");
+  oled.setCursor(0, 20); oled.print("sticks to both ends");
+  oled.setCursor(0, 30); oled.print("Release SW1 = done");
+  oled.setCursor(0, 42); oled.printf("T %4d-%4d Y %4d-%4d", gCalTmin, gCalTmax, gCalYmin, gCalYmax);
+  oled.setCursor(0, 52); oled.printf("P %4d-%4d R %4d-%4d", gCalPmin, gCalPmax, gCalRmin, gCalRmax);
   oled.display();
 }
 
+/* ---------- 開機: 已跳過流程 ---------- */
 static inline void oledBootSkip() {
   if (!gOledOk) return;
   oled.clearDisplay();
   oled.setTextSize(1);
   oled.setTextColor(SSD1306_WHITE);
-  oled.setCursor(0, 0);
-  oled.println("SW2 = ON");
-  oled.println("Skip boot flow");
-  oled.println("Use saved FlyID/cal");
-  oled.println();
-  oled.printf("FlyID: %3d\n", gSet.flyId);
-  oled.printf("Cal   : %s\n", gSet.calValid ? "OK" : "NOT CAL");
+  oled.setCursor(0, 0);  oled.print("SW2 = ON");
+  oled.setCursor(0, 10); oled.print("Skip boot flow");
+  oled.setCursor(0, 20); oled.print("Use saved ID / cal");
+  oled.setCursor(0, 34); oled.printf("FlyID   %3u", (unsigned)gSet.flyId);
+  oled.setCursor(0, 44); oled.printf("Cal     %s", gSet.calValid ? "OK" : "NOT CAL");
+  oled.setCursor(0, 54); oled.print("Starting...");
   oled.display();
-}
-
-/* ---------- 共用標頭 ---------- */
-static inline void oledHeader(const char* title) {
-  if (!gOledOk) return;
-  oled.setTextSize(1);
-  oled.setTextColor(SSD1306_WHITE);
-  oled.setCursor(0, 0);
-  oled.print(title);
-  oled.setCursor(84, 0);
-  oled.printf("p%u/%u", (unsigned)(gPage + 1), (unsigned)OLED_PAGES);
-  oled.drawFastHLine(0, 9, OLED_W, SSD1306_WHITE);
 }
 
 /* ---------- 頁面 0: 飛行遙測 ---------- */
 static inline void oledPageFlight() {
-  oled.clearDisplay();
-  oledHeader("FLIGHT");
-  oled.setCursor(0, 11);
-  oled.printf("ID:%3u  %s", (unsigned)gSet.flyId,
-               gLinkUp ? "LINK" : "----");
-  oled.setCursor(0, 21);
-  oled.printf("%s  THR:%4ld", gTelem.armed ? "ARMED " : "DISARM", gTelem.thr);
-  oled.setCursor(0, 31);
-  oled.printf("R:%+5.0f P:%+5.0f", gTelem.roll, gTelem.pitch);
-  oled.setCursor(0, 41);
-  oled.printf("Y:%+5.0f  %s", gTelem.yaw, inputSourceName(gCtrlActive));
-  oled.setCursor(0, 51);
-  oled.printf("M1:%4d M2:%4d", gTelem.motor[0], gTelem.motor[1]);
-  oled.setCursor(0, 61);
-  oled.printf("M3:%4d M4:%4d", gTelem.motor[2], gTelem.motor[3]);
+  oledHeader("FLIGHT", 0);
+
+  oledAt(0);
+  oled.printf("ID %3u  RC %3u  ", (unsigned)gSet.flyId, (unsigned)gSet.rcId);
+  oled.print(gLinkUp ? "LINK" : "----");
+
+  oledAt(1);
+  oled.printf("%-6s THR %4ld  %s",
+              gTelem.armed ? "ARMED" : "DISARM", gTelem.thr,
+              inputSourceCode(gCtrlActive));
+
+  oledAt(2);
+  oled.printf("R %+3.0f  P %+3.0f  Y %+3.0f", gTelem.roll, gTelem.pitch, gTelem.yaw);
+
+  oledAt(3);
+  oled.printf("M1 %4d  M2 %4d", gTelem.motor[0], gTelem.motor[1]);
+
+  oledAt(4);
+  oled.printf("M3 %4d  M4 %4d", gTelem.motor[2], gTelem.motor[3]);
+
   oled.display();
 }
 
 /* ---------- 頁面 1: 硬體輸入 ---------- */
 static inline void oledPageInput() {
-  oled.clearDisplay();
-  oledHeader("HARDWARE");
-  oled.setCursor(0, 11);
-  oled.printf("THR %4d -> %4ld", gHw.rawT, gHw.thr);
-  oled.setCursor(0, 21);
-  oled.printf("YAW %4d -> %+4.0f", gHw.rawY, gHw.yaw);
-  oled.setCursor(0, 31);
-  oled.printf("PIT %4d -> %+4.0f", gHw.rawP, gHw.pitch);
-  oled.setCursor(0, 41);
-  oled.printf("ROL %4d -> %+4.0f", gHw.rawR, gHw.roll);
-  oled.setCursor(0, 51);
-  oled.printf("SW %d%d%d%d  VRC1:%3d", gHw.sw1, gHw.sw2, gHw.sw3, gHw.sw4,
-               (unsigned)gHw.vrc1Id);
-  oled.setCursor(0, 61);
-  oled.printf("SRC:%s CAL:%s", inputSourceName(gCtrlActive),
-               gSet.calValid ? "OK" : "NO");
+  oledHeader("HARDWARE", 1);
+
+  oledAt(0); oled.printf("THR %4d > %4ld", gHw.rawT, gHw.thr);
+  oledAt(1); oled.printf("YAW %4d > %+4.0f", gHw.rawY, gHw.yaw);
+  oledAt(2); oled.printf("PIT %4d > %+4.0f", gHw.rawP, gHw.pitch);
+  oledAt(3); oled.printf("ROL %4d > %+4.0f", gHw.rawR, gHw.roll);
+  oledAt(4); oled.printf("SW%d%d%d%d VRC%3u CAL %s",
+                         gHw.sw1, gHw.sw2, gHw.sw3, gHw.sw4,
+                         (unsigned)gHw.vrc1Id, gSet.calValid ? "OK" : "NO");
+
   oled.display();
 }
 
 /* ---------- 頁面 2: 網路資訊 ---------- */
 static inline void oledPageNet() {
   bool wc = (WiFi.status() == WL_CONNECTED);
-  oled.clearDisplay();
-  oledHeader("NETWORK");
-  oled.setCursor(0, 11);
-  oled.print("STA:");
-  oled.print((wc ? WiFi.SSID() : gSet.ssid).substring(0, 17));
-  oled.setCursor(0, 21);
-  oled.printf("IP :%s", wc ? WiFi.localIP().toString().c_str() : "-");
-  oled.setCursor(0, 31);
-  oled.printf("RSSI:%d dBm", wc ? WiFi.RSSI() : 0);
-  oled.setCursor(0, 41);
-  oled.print("AP :");
-  oled.print(apSsid().substring(0, 17));
-  oled.setCursor(0, 51);
-  oled.printf("AP :%s", WiFi.softAPIP().toString().c_str());
-  oled.setCursor(0, 61);
-  oled.print("RX :");
-  oled.print(gSet.rxHost.substring(0, 13));
-  oled.printf(":%u", gSet.rxPort);
+  oledHeader("NETWORK", 2);
+
+  oledAt(0);
+  oled.print("STA ");
+  oled.print((wc ? WiFi.SSID() : gSet.ssid).substring(0, 13));
+
+  oledAt(1);
+  oled.print("IP  ");
+  oled.print(wc ? WiFi.localIP().toString() : String("-"));
+
+  oledAt(2);
+  oled.printf("RSSI %d dBm", wc ? WiFi.RSSI() : 0);
+
+  oledAt(3);
+  oled.print("AP  ");
+  oled.print(apSsid().substring(0, 15));
+
+  oledAt(4);
+  oled.print("RX  ");
+  oled.print(gSet.rxHost.length() ? gSet.rxHost.substring(0, 10) : String("-"));
+  oled.printf(":%u", (unsigned)gSet.rxPort);
+
   oled.display();
 }
 
 /* ---------- 頁面 3: ID / 校正值 ---------- */
 static inline void oledPageCal() {
-  oled.clearDisplay();
-  oledHeader("ID / CAL");
-  oled.setCursor(0, 11);
-  oled.printf("FlyID:%3u  RCID:%3u", (unsigned)gSet.flyId, (unsigned)gSet.rcId);
-  oled.setCursor(0, 21);
-  oled.printf("THR %4d - %4d", gSet.tmin, gSet.tmax);
-  oled.setCursor(0, 31);
-  oled.printf("YAW %4d - %4d", gSet.ymin, gSet.ymax);
-  oled.setCursor(0, 41);
-  oled.printf("PIT %4d - %4d", gSet.pmin, gSet.pmax);
-  oled.setCursor(0, 51);
-  oled.printf("ROL %4d - %4d", gSet.rmin, gSet.rmax);
-  oled.setCursor(0, 61);
-  oled.printf("CAL:%s  VRC1:%3u", gSet.calValid ? "OK" : "NO",
-               (unsigned)gHw.vrc1Id);
+  oledHeader("ID / CAL", 3);
+
+  oledAt(0);
+  oled.printf("ID %3u RC %3u CAL %s", (unsigned)gSet.flyId, (unsigned)gSet.rcId,
+              gSet.calValid ? "OK" : "NO");
+
+  oledAt(1); oled.printf("THR %4d-%4d", gSet.tmin, gSet.tmax);
+  oledAt(2); oled.printf("YAW %4d-%4d", gSet.ymin, gSet.ymax);
+  oledAt(3); oled.printf("PIT %4d-%4d", gSet.pmin, gSet.pmax);
+  oledAt(4); oled.printf("ROL %4d-%4d", gSet.rmin, gSet.rmax);
+
   oled.display();
 }
 
