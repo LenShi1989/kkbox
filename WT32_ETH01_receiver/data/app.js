@@ -110,7 +110,7 @@ $('nav').addEventListener('click', (e) => {
   document.querySelectorAll('#nav a').forEach(x => x.classList.toggle('active', x === a));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + a.dataset.page));
   if (a.dataset.page === 'network') loadNet();
-  if (a.dataset.page === 'motors') motorsTouched = false;
+  if (a.dataset.page === 'motors') { motorsTouched = false; mminLoad(); }
   if (a.dataset.page === 'user') loadUser();
 });
 
@@ -243,6 +243,61 @@ $('motors-apply').addEventListener('click', async () => {
   } catch (e) { toast('送出失敗: ' + e.message, 'err'); }
 });
 
+/* ---------- 各馬達最低啟動 PWM ---------- */
+let mminPending = 0;
+function showMmin(arr) {
+  if (!arr || !arr.length) return;
+  for (let i = 0; i < 8; i++) {
+    const el = $('mmin-' + (i + 1));
+    if (el && arr[i] !== undefined) el.value = arr[i];
+  }
+  $('mmin-state').textContent = '已讀取飛控值（已存於 EEPROM）';
+}
+function mminVal(i) {
+  const el = $('mmin-' + i);
+  let v = parseInt(el.value, 10);
+  if (!isFinite(v)) v = 1000;
+  v = Math.max(1000, Math.min(1500, v));
+  el.value = v;
+  return v;
+}
+function mminSend(obj) {
+  return api('/api/command', { method: 'POST', body: { cmd: JSON.stringify(obj) } });
+}
+async function mminLoad() {
+  $('mmin-state').textContent = '讀取中...';
+  try { await mminSend({ cmd: 'status' }); }
+  catch (e) { $('mmin-state').textContent = '讀取失敗: ' + e.message; return; }
+  setTimeout(() => {
+    if ($('mmin-state').textContent === '讀取中...')
+      $('mmin-state').textContent = '未收到飛控回應（請確認連線）';
+  }, 1500);
+}
+async function mminSave() {
+  const btn = $('mmin-save');
+  btn.disabled = true;
+  $('mmin-state').textContent = '下傳中...';
+  try {
+    mminPending = 8;
+    for (let i = 1; i <= 8; i++) {
+      await mminSend({ cmd: 'motmin', index: i, value: mminVal(i) });
+    }
+    $('mmin-state').textContent = '已送出，等待飛控確認...';
+    toast('已送出各馬達最低啟動 PWM');
+    setTimeout(() => {
+      if (mminPending > 0)
+        $('mmin-state').textContent = '已送出，飛控確認 ' + (8 - mminPending) + '/8';
+    }, 2000);
+  } catch (e) {
+    $('mmin-state').textContent = '下傳失敗: ' + e.message;
+    toast('下傳失敗', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+$('mmin-load').addEventListener('click', mminLoad);
+$('mmin-save').addEventListener('click', mminSave);
+
 async function loadFs() {
   let f;
   try { f = await api('/api/fs'); } catch (e) { return; }
@@ -270,6 +325,11 @@ function connectWs() {
       if (m.hello) return;
       serLog('rx', ev.data);
       if (m.gyro) applyTelemetry(m);
+      else if (m.mmin) showMmin(m.mmin);
+      else if (m.ack === 'motmin' && mminPending > 0) {
+        mminPending--;
+        if (mminPending === 0) $('mmin-state').textContent = '飛控已確認 8 顆設定';
+      }
     } catch (e) {
       serLog('rx', ev.data);
     }

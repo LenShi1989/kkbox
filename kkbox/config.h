@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #define FW_NAME    "KKBOX"
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "1.1.0"
 
 /* ---------- RS232 (TX=硬體 UART, RX=SoftwareSerial) ----------
  * 接腳: RS232-TX = PD1 = GPIO17 = Arduino D1  (硬體 UART TXD, 同腳)
@@ -97,6 +97,17 @@ static inline void ledWrite(uint8_t on) {
 
 #define ESC_MIN 1000
 #define ESC_MAX 2000
+
+/* ---------- 各馬達最低啟動 PWM (us) ----------
+ * 每顆 ESC 開始轉動的油門下限不同; 解鎖且油門高於 ESC_MIN 時,
+ * 各馬達輸出不會低於此值, 避免低油門時個別馬達停轉/不同步。
+ * 預設 1000 (不補償), 可用 {"cmd":"motmin","index":1,"value":1050} 調整,
+ * index 0 = 全部馬達; 數值存於 EEPROM, 重開機仍保留。
+ * ESC 行程校正 (nopid) 期間不套用, 確保可回到 1000us。
+ */
+#define MOTOR_MIN_US   1000
+#define MOTOR_MIN_MIN  1000
+#define MOTOR_MIN_MAX  1500
 
 /* ---------- 機架設定 ---------- */
 #define KK_FRAME 0   /* 0 = Quad-X, 1 = Quad-+ */

@@ -17,6 +17,7 @@
  */
 
 #include <Servo.h>
+#include <EEPROM.h>
 #define _SS_MAX_RX_BUFF 128   /* SoftwareSerial RX 緩衝 (預設64B, 命令字串可達~70B 會被截斷) */
 #include <SoftwareSerial.h>
 #include "config.h"
@@ -46,6 +47,13 @@ bool  hold  = false;         /* 定高 (油門保持): 鎖定當前油門 */
 bool  pidBypass = false;     /* 馬達校正: 略過 PID, 馬達僅輸出固定油門 */
 uint8_t motorCount = MOTOR_COUNT;
 
+/* 各馬達最低啟動 PWM (us), 存於 EEPROM (magic + 8 x uint16) */
+#define EE_MOTOR_MIN_MAGIC 0x4B4D
+#define EE_MOTOR_MIN_ADDR  0
+#define EE_MOTOR_MIN_DATA  2
+
+uint16_t motorMin[MAX_MOTORS];
+
 uint8_t  ledMode = 2;                 /* 0=off 1=on 2=blink */
 uint8_t  ledValue = 0;
 uint16_t telIntervalMs = TEL_INTERVAL_MS;
@@ -56,6 +64,31 @@ uint32_t lastCmdMs  = 0;
 uint32_t lastLedMs  = 0;
 
 float motorUs[MAX_MOTORS];
+
+/* 讀取各馬達最低啟動 PWM; EEPROM 無效時寫入預設值 */
+static void motorMinLoad() {
+  uint16_t magic = 0;
+  for (uint8_t i = 0; i < MAX_MOTORS; i++) motorMin[i] = MOTOR_MIN_US;
+
+  EEPROM.get(EE_MOTOR_MIN_ADDR, magic);
+  if (magic == EE_MOTOR_MIN_MAGIC) {
+    for (uint8_t i = 0; i < MAX_MOTORS; i++)
+      EEPROM.get(EE_MOTOR_MIN_DATA + i * 2, motorMin[i]);
+  }
+
+  bool fix = (magic != EE_MOTOR_MIN_MAGIC);
+  for (uint8_t i = 0; i < MAX_MOTORS; i++) {
+    if (motorMin[i] < MOTOR_MIN_MIN || motorMin[i] > MOTOR_MIN_MAX) {
+      motorMin[i] = MOTOR_MIN_US;
+      fix = true;
+    }
+  }
+  if (fix) {
+    EEPROM.put(EE_MOTOR_MIN_ADDR, (uint16_t)EE_MOTOR_MIN_MAGIC);
+    for (uint8_t i = 0; i < MAX_MOTORS; i++)
+      EEPROM.put(EE_MOTOR_MIN_DATA + i * 2, motorMin[i]);
+  }
+}
 
 /* 依馬達數掛載/卸載 Servo, 可執行中切換 4 / 8 (X8 同軸) */
 static void attachMotors(uint8_t count) {
@@ -104,8 +137,12 @@ static void controlStep(float dt) {
   float thr = armed ? (float)throttleUs : (float)ESC_MIN;
   mixerCompute(motorCount, thr, rOut, pOut, yOut, motorUs);
 
+  /* 油門離開 1000us 後, 各馬達至少輸出其最低啟動 PWM, 避免低油門
+   * 時因 ESC 死區不同而個別停轉。ESC 行程校正 (nopid) 期間不套用。 */
+  bool motorStart = armed && !pidBypass && throttleUs > ESC_MIN;
   for (uint8_t i = 0; i < motorCount; i++) {
     float v = motorUs[i];
+    if (motorStart && (float)motorMin[i] > v) v = (float)motorMin[i];
     if (v < ESC_MIN) v = ESC_MIN;
     if (v > ESC_MAX) v = ESC_MAX;
     motorUs[i] = v;
@@ -240,6 +277,23 @@ static void handleCommand(const char* s) {
     applyPid(axis, jFloat(s, "kp", 0), jFloat(s, "ki", 0), jFloat(s, "kd", 0));
     ackCmd("pid");
 
+  } else if (!strcmp(cmd, "motmin")) {
+    long idx = jInt(s, "index", 1);
+    long val = jInt(s, "value", MOTOR_MIN_US);
+    if (val < MOTOR_MIN_MIN) val = MOTOR_MIN_MIN;
+    if (val > MOTOR_MIN_MAX) val = MOTOR_MIN_MAX;
+
+    if (idx == 0) {
+      for (uint8_t i = 0; i < MAX_MOTORS; i++) {
+        motorMin[i] = (uint16_t)val;
+        EEPROM.put(EE_MOTOR_MIN_DATA + i * 2, motorMin[i]);
+      }
+    } else if (idx >= 1 && idx <= MAX_MOTORS) {
+      motorMin[idx - 1] = (uint16_t)val;
+      EEPROM.put(EE_MOTOR_MIN_DATA + (idx - 1) * 2, motorMin[idx - 1]);
+    }
+    ackCmd("motmin");
+
   } else if (!strcmp(cmd, "telemetry")) {
     long v = jInt(s, "value", telIntervalMs);
     if (v < 0) v = 0;
@@ -258,7 +312,12 @@ static void handleCommand(const char* s) {
     Serial.print(motorCount);
     Serial.print(F(",\"hold\":"));
     Serial.print(hold);
-    Serial.println(F("}"));
+    Serial.print(F(",\"mmin\":["));
+    for (uint8_t i = 0; i < MAX_MOTORS; i++) {
+      if (i) Serial.print(',');
+      Serial.print(motorMin[i]);
+    }
+    Serial.println(F("]}"));
 
   } else {
     Serial.println(F("{\"err\":\"bad cmd\"}"));
@@ -292,6 +351,7 @@ void setup() {
   readSerial();             /* 清掉開機瞬間的殘留位元組 */
   ledInit();
 
+  motorMinLoad();
   attachMotors(MOTOR_COUNT);
 
   pidRoll.setTunings(PID_ROLL_KP, PID_ROLL_KI, PID_ROLL_KD);

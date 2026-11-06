@@ -97,7 +97,7 @@ $('nav').addEventListener('click', (e) => {
   if (a.dataset.page === 'hardware') loadHw();
   if (a.dataset.page === 'pid') loadPid();
   if (a.dataset.page === 'user') loadUser();
-  if (a.dataset.page === 'esc') loadEsc();
+  if (a.dataset.page === 'esc') { loadEsc(); loadMmin(); }
   /* 頁面切換後才取得實際尺寸，避免搖桿圓點停在左上角 */
   if (a.dataset.page === 'joy') setKnob(joyRoll / RANGE, -joyPitch / RANGE);
 });
@@ -144,7 +144,11 @@ async function loadStatus() {
     lastAckPoll = s.kkAck || '';
     const e = $('kk-ack');
     if (e) e.textContent = s.kkAck || '-';
-    try { const a = JSON.parse(s.kkAck); if (a && a.ack) onAck(a.ack); } catch (err) {}
+    try {
+      const a = JSON.parse(s.kkAck);
+      if (a && a.mmin) showMmin(a.mmin);
+      if (a && a.ack) onAck(a.ack, 'poll');
+    } catch (err) {}
   }
 }
 
@@ -190,7 +194,8 @@ function connectWs() {
     try {
       const m = JSON.parse(ev.data);
       if (m.gyro) applyTelemetry(m);
-      else if (m.ack) onAck(m.ack);
+      else if (m.mmin) { showMmin(m.mmin); if (m.ack) onAck(m.ack, 'ws'); }
+      else if (m.ack) onAck(m.ack, 'ws');
       else if (m.err) onLinkErr(m.err);
       else if (m.evt === 'failsafe') onLinkErr('飛控 failsafe 已自動上鎖');
     } catch (e) {}
@@ -221,7 +226,14 @@ function sendCmd(obj) {
 const pendingCmd = {};
 let lastErrAt = 0;
 let lastAckPoll = '';
-function onAck(cmd) {
+function onAck(cmd, src) {
+  if (cmd === 'motmin' && mminPending > 0) {
+    /* WS 已即時收到時, HTTP 輪詢的舊 ack 不重複計數 */
+    if (src === 'poll' && ws && ws.readyState === 1) return;
+    mminPending--;
+    if (mminPending === 0) $('mmin-state').textContent = '飛控已確認 8 顆設定';
+    return;
+  }
   const st = pendingCmd[cmd];
   if (!st) return;   /* 週期性命令 (throttle/setpoints) 的回應不提示 */
   clearTimeout(st.timer); delete pendingCmd[cmd];
@@ -584,6 +596,44 @@ $('esc-stop').addEventListener('click', () => {
   $('joy-thr').value = 1000; $('joy-thr-v').textContent = '1000';
   dirty = true;
   toast('已停止輸出 (1000us)', 'ok');
+});
+
+/* ---------- 各馬達最低啟動 PWM ---------- */
+let mminPending = 0;
+function showMmin(arr) {
+  if (!arr || !arr.length) return;
+  for (let i = 0; i < 8; i++) {
+    const el = $('mmin-' + (i + 1));
+    if (el && arr[i] !== undefined) el.value = arr[i];
+  }
+  $('mmin-state').textContent = '已讀取飛控值（已存於 EEPROM）';
+}
+function mminVal(i) {
+  const el = $('mmin-' + i);
+  let v = parseInt(el.value, 10);
+  if (!isFinite(v)) v = 1000;
+  v = Math.max(1000, Math.min(1500, v));
+  el.value = v;
+  return v;
+}
+function loadMmin() {
+  $('mmin-state').textContent = '讀取中...';
+  sendCmd({ cmd: 'status' });
+  setTimeout(() => {
+    if ($('mmin-state').textContent === '讀取中...')
+      $('mmin-state').textContent = '未收到飛控回應（請確認連線）';
+  }, 1500);
+}
+$('mmin-load').addEventListener('click', loadMmin);
+$('mmin-save').addEventListener('click', () => {
+  mminPending = 8;
+  for (let i = 1; i <= 8; i++) sendCmd({ cmd: 'motmin', index: i, value: mminVal(i) });
+  $('mmin-state').textContent = '已送出，等待飛控確認...';
+  toast('已送出各馬達最低啟動 PWM', 'ok');
+  setTimeout(() => {
+    if (mminPending > 0)
+      $('mmin-state').textContent = '已送出，飛控確認 ' + (8 - mminPending) + '/8';
+  }, 2000);
 });
 
 /* ---------- 啟動 ---------- */

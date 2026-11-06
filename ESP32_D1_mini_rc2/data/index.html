@@ -304,6 +304,32 @@
         <p class="muted small">套用後遙控器會持續以該固定值送油門命令；飛控板不套用 PID。停止即回到 1000us。</p>
       </div>
 
+      <h3>各馬達最低啟動 PWM (1000~1500us)</h3>
+      <div class="card">
+        <p class="muted small">設定每顆馬達開始轉動的油門下限。解鎖後油門高於 1000us 時，各馬達輸出不會低於此值，可避免低油門時因 ESC 死區不同而個別停轉或不同步。ESC 行程校正（PID 旁通 nopid）期間不套用。</p>
+        <div class="scroll-x">
+          <table class="tbl" id="mmin-tbl">
+            <thead><tr><th>馬達</th><th>最低啟動 PWM (us)</th></tr></thead>
+            <tbody>
+              <tr><td>M1 FL CCW</td><td><input id="mmin-1" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M2 FR CW</td><td><input id="mmin-2" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M3 RR CCW</td><td><input id="mmin-3" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M4 RL CW</td><td><input id="mmin-4" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M5 FL 下槳 CW</td><td><input id="mmin-5" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M6 FR 下槳 CCW</td><td><input id="mmin-6" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M7 RR 下槳 CW</td><td><input id="mmin-7" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+              <tr><td>M8 RL 下槳 CCW</td><td><input id="mmin-8" type="number" min="1000" max="1500" step="5" value="1000"></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="row">
+          <button id="mmin-load" class="ghost">讀取飛控目前值</button>
+          <button id="mmin-save">儲存並下傳</button>
+        </div>
+        <p class="muted small" id="mmin-state">-</p>
+        <p class="muted small">數值存於飛控板 EEPROM，重開機仍保留；M5~M8 僅在 8 槳 (X8) 模式生效。</p>
+      </div>
+
       <h3>校正步驟</h3>
       <ol class="esc-steps">
         <li>
