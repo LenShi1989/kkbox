@@ -397,6 +397,7 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
   tools\build_spiffs.bat ESP32_D1_mini_rc2     # 內含 data\config.json
   ```
   （兩個專案皆使用 `Minimal SPIFFS` 分割表，SPIFFS 位移同為 `0x3D0000`、大小 `0x20000`。`rc2` 首次開機若找不到 `/config.json` 會自動以預設值建立。）
+  > ⚠️ **上傳 SPIFFS 會整顆格式化該分割區**：rc2 的 WiFi、接收機 IP/Token、PID、搖桿校正都存在 `/config.json`，上傳後會回到 `data/config.json` 的預設值（SSID、IP、Token 全空），遙控器就不會再去連接收機，必須重新設定。接收機的設定存在 NVS，不受 SPIFFS 上傳影響。只改程式、網頁沒改時請用 OTA，不要上傳 SPIFFS。
   產生後再用 esptool 燒入：`esptool.py --chip esp32 --port COMx write_flash <offset> build\spiffs.bin`。
 - **Arduino IDE 1.8.x**：安裝 **ESP32 Sketch Data Upload** 外掛，
   使用 `Tools → ESP32 Sketch Data Upload`（分割區會依所選開發板自動帶入）。
@@ -414,7 +415,7 @@ WT32-ETH01 沒有 USB，必須用 **USB-TTL（3.3V，勿用 5V TTL）** 燒錄�
   `KKBOX-Receiver-<MAC後4碼>` / 密碼 `12345678`（WiFi STA 連線與 AP 共存，AP 網段 `192.168.4.x`）。
   瀏覽器開啟其 IP，登入 `admin / admin`。
 - **遙控器**：一律啟動 SoftAP `KKBOX-RC-<MAC後4碼>` / 密碼 `12345678`（WiFi STA 連線與 AP 共存，AP 網段 `192.168.10.x`，與接收機區隔），並於 OLED 顯示狀態。
-- 首次設定：接收機「使用者設定」取得 **裝置連結 Token**；遙控器「網路設定」填入接收機 **IP + Token**。
+- 首次設定：接收機「使用者設定」取得 **裝置連結 Token**；遙控器「網路設定」填入接收機 **IP + Token**。接收機 SoftAP 的 IP 固定為 `192.168.4.1`、密碼 `12345678`；遙控器自己的 SoftAP 是 `192.168.10.1`，兩者不要混淆。若遙控器剛上傳過 SPIFFS，上述設定會被清空，需重新輸入。
 - **rc2 開機流程**：轉 VRC1 選無人機 ID → 按 SW1 確認 → 按住 SW1 期間把四軸推到兩端校正 → 放開 SW1 結束；按住 SW2 開機則跳過（沿用 `/config.json` 內的 ID/校正值）。硬體搖桿未完成校正前不會送出命令。
 - **遙控器連線**：接收機（2.1.0+）已無藍牙，遙控器請用 `ESP32_D1_mini_rc2` 並在「網路設定」填入接收機 IP + Token，狀態頁的 `LINK` 亮起即代表 WebSocket 已連線。
 
